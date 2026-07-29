@@ -1,0 +1,33 @@
+{
+  "checkpoint": "./runs/exp1/checkpoints/best.pt",
+  "checkpoint_epoch": 119,
+  "n_test_images": 1509,
+  "class_names": [
+    "oil leakage",
+    "paint cracks",
+    "localized damage",
+    "lightning strikes",
+    "surface stains",
+    "erosion",
+    "coating detachment",
+    "protective film damage",
+    "pinholes"
+  ],
+  "macro_precision": 0.634272867435548,
+  "macro_recall": 0.6872358645511517,
+  "macro_f1": 0.6537458944575312,
+  "balanced_acc": 0.6872358645511517,
+  "kappa": 0.6415879199860284,
+  "mcc": 0.643542120168928,
+  "per_class_f1": [
+    0.9952153110047847,
+    0.4888888888888889,
+    0.4628099173553719,
+    0.8507462686567164,
+    0.28346456692913385,
+    0.86558627264061,
+    0.6153846153846154,
+    0.6891385767790262,
+    0.6324786324786325
+  ]
+}

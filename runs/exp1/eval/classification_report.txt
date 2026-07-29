@@ -1,0 +1,15 @@
+                        precision    recall  f1-score   support
+
+           oil leakage     0.9905    1.0000    0.9952       104
+          paint cracks     0.4835    0.4944    0.4889        89
+      localized damage     0.5316    0.4098    0.4628       205
+     lightning strikes     0.7403    1.0000    0.8507        57
+        surface stains     0.2432    0.3396    0.2835        53
+               erosion     0.9284    0.8107    0.8656       560
+    coating detachment     0.5882    0.6452    0.6154       217
+protective film damage     0.5860    0.8364    0.6891       110
+              pinholes     0.6167    0.6491    0.6325       114
+
+              accuracy                         0.7071      1509
+             macro avg     0.6343    0.6872    0.6537      1509
+          weighted avg     0.7239    0.7071    0.7101      1509
