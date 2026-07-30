@@ -18,12 +18,13 @@ from typing import Dict, List, Optional
 import torch
 from sklearn.metrics import (
     precision_score, recall_score, f1_score, balanced_accuracy_score,
-    cohen_kappa_score, matthews_corrcoef,
+    cohen_kappa_score, matthews_corrcoef, accuracy_score,
 )
 
 
 def compute_metrics(y_true: List[int], y_pred: List[int], num_classes: int) -> Dict:
     return {
+        "accuracy": accuracy_score(y_true, y_pred),
         "macro_precision": precision_score(y_true, y_pred, average="macro", zero_division=0),
         "macro_recall": recall_score(y_true, y_pred, average="macro", zero_division=0),
         "macro_f1": f1_score(y_true, y_pred, average="macro", zero_division=0),

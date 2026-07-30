@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Large model files
+*.pt
+
+# ZIP files
+*.zip
+
+# Optional
+*.pth
+*.ckpt

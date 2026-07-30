@@ -7,17 +7,45 @@ at the placements specified there:
     Input 224x224x3
       -> DSPS (stem)                                    56x56x64
       -> Stage 1: TSDB + ASA                             56x56x64
+      -> Transition Layer
       -> Stage 2: TSDB + ASA + DRFB                      28x28x128
+      -> Transition Layer
       -> Stage 3: TSDB + ASA + WGFR                      14x14x256
+      -> Transition Layer
       -> Stage 4: TSDB + ASA + MSCA                        7x7x512
       -> LTCP head                                       9 logits
 
-NOTE on your original wtb_defectnet.py: it only implemented DSPS, TSDB, ASA,
-LTCP and used the same plain TSDB+ASA stage at all 4 depths. DRFB, WGFR and
-MSCA (three of your seven claimed novel blocks) were not in the code. That
-would have made the paper's architecture section and the actual trained
-model disagree with each other, which a reviewer (or your advisor) would
-flag immediately. This file adds the missing three at the doc's placements.
+CHANGELOG vs the previous version of this file (bring code in line with
+Proposed_Architecture.docx, per the doc-vs-code audit):
+
+  1. DSPS (B1): the three dilated branches are now genuinely DEPTHWISE
+     (groups=in_ch) + a pointwise 1x1 projection, not standard convs. The
+     doc's Novelty section explicitly says "parallel depthwise (not
+     standard) dilated branches" -- the old code used plain nn.Conv2d with
+     no groups=, i.e. standard convs. Also added the "Residual Fusion"
+     component the doc lists but the old code never implemented (a
+     stride-4, 1x1 projected shortcut from the raw input straight to the
+     stem output).
+
+  2. Transition Layer: the doc specifies this as its own component between
+     stages -- 1x1 Conv -> BN -> Act -> 2x2 AvgPool -- distinct from a
+     single strided conv. The old code folded stage downsampling into one
+     3x3 stride-2 conv inside Stage.down. This file adds a real
+     TransitionLayer module and uses it wherever Stage downsamples.
+
+  3. LTCP (B7): the doc's novelty is a COSINE CLASSIFIER + LOGIT ADJUSTMENT
+     + EMA PROTOTYPE MEMORY BANK. The old code had prototypes as an
+     ordinary nn.Parameter trained by plain backprop -- there was no EMA
+     update anywhere in the codebase. Prototypes are now a non-learnable
+     buffer, updated via update_prototypes() (call once per training step,
+     after optimizer.step(), from train.py). This is the change most
+     likely to affect lightning-strike-style rare classes, since EMA
+     carries a class's estimate forward across steps instead of only
+     updating it (noisily, via gradient) whenever that class happens to
+     appear in a batch.
+
+Everything else (TSDB, ASA, DRFB, WGFR, MSCA) already matched the doc and
+is unchanged.
 """
 
 import torch
@@ -30,14 +58,29 @@ from torchvision.ops import DeformConv2d
 # B1 -- Defect-Scale Pyramid Stem (DSPS)
 # ======================================================================
 class DSPS(nn.Module):
-    """Parallel depthwise dilated convs (d=1,2,3) + Sobel edge branch, fused."""
+    """
+    Parallel DEPTHWISE dilated convs (d=1,2,3) + Sobel edge branch, fused,
+    plus a residual-fusion shortcut from the raw input.
+    """
 
     def __init__(self, in_ch: int = 3, out_ch: int = 64):
         super().__init__()
         mid = out_ch
-        self.b1 = nn.Conv2d(in_ch, mid, 3, stride=2, padding=1, dilation=1)
-        self.b2 = nn.Conv2d(in_ch, mid, 3, stride=2, padding=2, dilation=2)
-        self.b3 = nn.Conv2d(in_ch, mid, 3, stride=2, padding=3, dilation=3)
+
+        def depthwise_dilated(dilation: int) -> nn.Sequential:
+            # Depthwise (groups=in_ch) dilated conv, THEN a pointwise 1x1 to
+            # project up to `mid` channels -- a plain depthwise conv on a
+            # 3-channel RGB input can't change channel count by itself, so
+            # the pointwise step is required to get a usable feature count.
+            return nn.Sequential(
+                nn.Conv2d(in_ch, in_ch, 3, stride=2, padding=dilation,
+                          dilation=dilation, groups=in_ch),
+                nn.Conv2d(in_ch, mid, 1),
+            )
+
+        self.b1 = depthwise_dilated(1)
+        self.b2 = depthwise_dilated(2)
+        self.b3 = depthwise_dilated(3)
 
         # Sobel edge branch: fixed, non-learnable Gx/Gy kernels applied to a
         # grayscale-luma projection of the RGB input, then downsampled to match.
@@ -51,12 +94,14 @@ class DSPS(nn.Module):
         self.proj = nn.Conv2d(mid * 4, out_ch, 1)
         self.bn = nn.BatchNorm2d(out_ch)
         self.act = nn.GELU()
-        # Branches above are stride=2 (224 -> 112). Your plan doc's macro table
-        # (section 2) specifies the STEM alone must reach 56x56 before Stage 1
-        # (which itself does not downsample). One extra stride-2 pool gives the
-        # documented 4x total stem reduction (224 -> 112 -> 56), matching every
-        # stage's stated output size in the doc.
+        # Branches above are stride=2 (224 -> 112). One extra stride-2 pool
+        # gives the documented 4x total stem reduction (224 -> 112 -> 56).
         self.pool = nn.MaxPool2d(2, stride=2)
+
+        # NEW: Residual Fusion (doc-listed DSPS component). A cheap 1x1,
+        # stride-4 shortcut from the raw input straight to the stem output,
+        # matching the stem's total downsampling factor (224 -> 56).
+        self.residual = nn.Conv2d(in_ch, out_ch, kernel_size=1, stride=4)
 
     def _sobel_edges(self, x: torch.Tensor) -> torch.Tensor:
         gray = (x * self.luma_w).sum(dim=1, keepdim=True)          # (B,1,H,W)
@@ -68,11 +113,13 @@ class DSPS(nn.Module):
         edge = self.edge_proj(self._sobel_edges(x))
         feats = torch.cat([self.b1(x), self.b2(x), self.b3(x), edge], dim=1)
         out = self.act(self.bn(self.proj(feats)))
-        return self.pool(out)
+        out = self.pool(out)
+        out = out + self.residual(x)     # residual fusion
+        return out
 
 
 # ======================================================================
-# B2 -- Texture-Structure Disentangling Block (TSDB)
+# B2 -- Texture-Structure Disentangling Block (TSDB)  -- unchanged
 # ======================================================================
 class TSDB(nn.Module):
     """LF/HF split via AvgPool residual; two specialized branches; learnable channel gate."""
@@ -102,7 +149,7 @@ class TSDB(nn.Module):
 
 
 # ======================================================================
-# B3 -- Anisotropic Strip Attention (ASA)
+# B3 -- Anisotropic Strip Attention (ASA)  -- unchanged
 # ======================================================================
 class ASA(nn.Module):
     """Horizontal + vertical strip pooling -> directional spatial attention."""
@@ -124,7 +171,7 @@ class ASA(nn.Module):
 
 
 # ======================================================================
-# B4 -- Deformable Receptive Field Block (DRFB)  -- placed at Stage 2
+# B4 -- Deformable Receptive Field Block (DRFB)  -- Stage 2, unchanged
 # ======================================================================
 class DRFB(nn.Module):
     """
@@ -136,10 +183,8 @@ class DRFB(nn.Module):
     def __init__(self, ch: int, kernel_size: int = 3, groups: int = 4):
         super().__init__()
         assert ch % groups == 0, "channels must divide evenly by DRFB groups"
-        offset_ch = 2 * kernel_size * kernel_size  # offset_groups=1: dx,dy per kernel tap
+        offset_ch = 2 * kernel_size * kernel_size
         self.offset_conv = nn.Conv2d(ch, offset_ch, kernel_size=3, padding=1)
-        # zero-init so DRFB starts as an ordinary (non-deformed) conv --
-        # standard stabilization trick, avoids garbage offsets early in training
         nn.init.zeros_(self.offset_conv.weight)
         nn.init.zeros_(self.offset_conv.bias)
 
@@ -163,14 +208,12 @@ class DRFB(nn.Module):
 
 
 # ======================================================================
-# Haar DWT/IDWT as fixed (non-learnable) grouped convolutions
+# Haar DWT/IDWT as fixed (non-learnable) grouped convolutions -- unchanged
 # ======================================================================
 class HaarDWT(nn.Module):
     """
     1-level 2D Haar wavelet transform implemented as a depthwise conv with 4
-    fixed, orthonormal filters (LL/LH/HL/HH) per channel. Because the filter
-    bank is orthonormal, the inverse transform is exactly the transposed
-    convolution with the same weights -- no separate learnable "decoder".
+    fixed, orthonormal filters (LL/LH/HL/HH) per channel.
     """
 
     def __init__(self, channels: int):
@@ -180,8 +223,8 @@ class HaarDWT(nn.Module):
         lh = torch.tensor([[1., 1.], [-1., -1.]]) * 0.5
         hl = torch.tensor([[1., -1.], [1., -1.]]) * 0.5
         hh = torch.tensor([[1., -1.], [-1., 1.]]) * 0.5
-        bank = torch.stack([ll, lh, hl, hh], dim=0).unsqueeze(1)   # (4,1,2,2)
-        weight = bank.repeat(channels, 1, 1, 1)                    # (4C,1,2,2)
+        bank = torch.stack([ll, lh, hl, hh], dim=0).unsqueeze(1)
+        weight = bank.repeat(channels, 1, 1, 1)
         self.register_buffer("weight", weight)
 
     @staticmethod
@@ -194,7 +237,7 @@ class HaarDWT(nn.Module):
 
     def decompose(self, x: torch.Tensor):
         x, orig_hw = self._pad_to_even(x)
-        out = F.conv2d(x, self.weight, stride=2, groups=self.channels)  # (B,4C,H/2,W/2)
+        out = F.conv2d(x, self.weight, stride=2, groups=self.channels)
         ll = out[:, 0::4]
         lh = out[:, 1::4]
         hl = out[:, 2::4]
@@ -206,7 +249,7 @@ class HaarDWT(nn.Module):
         stacked = torch.stack([ll, lh, hl, hh], dim=2).reshape(b, c * 4, h2, w2)
         recon = F.conv_transpose2d(stacked, self.weight, stride=2, groups=self.channels)
         H, W = orig_hw
-        return recon[:, :, :H, :W]   # crop off the even-padding, if any
+        return recon[:, :, :H, :W]
 
 
 class _ChannelGate(nn.Module):
@@ -226,16 +269,9 @@ class _ChannelGate(nn.Module):
 
 
 # ======================================================================
-# B5 -- Wavelet-Gated Frequency Refinement (WGFR)  -- placed at Stage 3
+# B5 -- Wavelet-Gated Frequency Refinement (WGFR)  -- Stage 3, unchanged
 # ======================================================================
 class WGFR(nn.Module):
-    """
-    Replaces TSDB's rough AvgPool LF/HF split with an exact, alias-free Haar
-    DWT at Stage 3 (the semantic stage where frequency precision matters
-    most), refines each sub-band with its own gated conv, and reconstructs
-    via IDWT as a targeted residual correction.
-    """
-
     def __init__(self, ch: int):
         super().__init__()
         self.dwt = HaarDWT(ch)
@@ -260,15 +296,13 @@ class WGFR(nn.Module):
         lh2, hl2, hh2 = torch.chunk(hf, 3, dim=1)
 
         recon = self.dwt.reconstruct(ll, lh2, hl2, hh2, orig_hw)
-        return x + recon    # targeted frequency correction, residual per doc
+        return x + recon
 
 
 # ======================================================================
-# B6 -- Multi-Scale Context Aggregator (MSCA)  -- placed at Stage 4
+# B6 -- Multi-Scale Context Aggregator (MSCA)  -- Stage 4, unchanged
 # ======================================================================
 class MSCA(nn.Module):
-    """Inception-style 1x1 / 3x3-depthwise / 5x5-depthwise parallel branches."""
-
     def __init__(self, ch: int):
         super().__init__()
         self.b1 = nn.Sequential(nn.Conv2d(ch, ch, 1), nn.BatchNorm2d(ch), nn.GELU())
@@ -288,16 +322,41 @@ class MSCA(nn.Module):
 
 
 # ======================================================================
-# Stage wrapper: downsample -> TSDB (residual) -> ASA -> optional extra block
+# NEW -- Transition Layer (doc-specified, between stages)
+# ======================================================================
+class TransitionLayer(nn.Module):
+    """
+    1x1 Conv -> BN -> GELU -> 2x2 AvgPool, exactly as listed in the doc's
+    "Transition Layer" section. Used between Stage1->2, Stage2->3, Stage3->4.
+    Replaces the previous single 3x3 stride-2 conv that was doing this job
+    (different receptive field / parameter count than what was documented).
+    """
+
+    def __init__(self, in_ch: int, out_ch: int):
+        super().__init__()
+        self.proj = nn.Conv2d(in_ch, out_ch, 1)
+        self.bn = nn.BatchNorm2d(out_ch)
+        self.act = nn.GELU()
+        self.pool = nn.AvgPool2d(2, stride=2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.pool(self.act(self.bn(self.proj(x))))
+
+
+# ======================================================================
+# Stage wrapper: [transition] -> TSDB (residual) -> ASA -> optional extra block
 # ======================================================================
 class Stage(nn.Module):
     def __init__(self, in_ch: int, out_ch: int, downsample: bool = True, extra: str = None):
         super().__init__()
         self.down = None
-        if downsample or in_ch != out_ch:
+        if downsample:
+            self.down = TransitionLayer(in_ch, out_ch)
+        elif in_ch != out_ch:
+            # channel-only projection, no spatial downsampling (not
+            # currently exercised anywhere in WTBDefectNet, kept for safety)
             self.down = nn.Sequential(
-                nn.Conv2d(in_ch, out_ch, 3, stride=2 if downsample else 1, padding=1),
-                nn.BatchNorm2d(out_ch), nn.GELU(),
+                nn.Conv2d(in_ch, out_ch, 1), nn.BatchNorm2d(out_ch), nn.GELU(),
             )
         self.tsdb = TSDB(out_ch)
         self.asa = ASA(out_ch)
@@ -326,13 +385,29 @@ class Stage(nn.Module):
 # B7 -- Long-Tail Calibrated Prototype Head (LTCP)
 # ======================================================================
 class LTCP(nn.Module):
-    """Cosine-prototype classifier + class-frequency logit adjustment (train-time only)."""
+    """
+    Cosine-prototype classifier + class-frequency logit adjustment
+    (train-time only) + an EMA-updated prototype memory bank.
 
-    def __init__(self, feat_dim: int, num_classes: int, tau: float = 16.0, lam: float = 1.0):
+    Prototypes are now a registered buffer, NOT an nn.Parameter -- they are
+    never updated by backprop/the optimizer. Instead, update_prototypes()
+    must be called once per training step (after optimizer.step()) with the
+    batch's backbone features and labels; it EMA-updates only the class
+    prototypes that were actually present in that batch, leaving the rest
+    untouched. This is what lets a rare class like lightning strikes keep a
+    stable running estimate across steps, instead of only updating (noisily,
+    via gradient) on the rare steps where it happens to appear.
+    """
+
+    def __init__(self, feat_dim: int, num_classes: int, tau: float = 16.0,
+                 lam: float = 1.0, momentum: float = 0.9):
         super().__init__()
-        self.prototypes = nn.Parameter(torch.randn(num_classes, feat_dim) * 0.01)
+        self.register_buffer("prototypes", torch.randn(num_classes, feat_dim) * 0.01)
+        self.register_buffer("initialized", torch.zeros(num_classes, dtype=torch.bool))
         self.tau = tau
         self.lam = lam
+        self.momentum = momentum
+        self.num_classes = num_classes
         self.register_buffer("log_prior", torch.zeros(num_classes))
 
     def set_prior(self, class_counts) -> None:
@@ -349,13 +424,43 @@ class LTCP(nn.Module):
             logits = logits + self.lam * self.log_prior.unsqueeze(0)
         return logits, f
 
+    @torch.no_grad()
+    def update_prototypes(self, feat: torch.Tensor, labels: torch.Tensor) -> None:
+        """
+        EMA-update the prototype memory bank from one batch of backbone
+        features. Call this AFTER optimizer.step() each training step, e.g.:
+
+            logits, feat = model(imgs)
+            loss.backward(); optimizer.step()
+            model.head.update_prototypes(feat.detach(), labels)
+
+        Classes absent from this batch are left untouched (their EMA
+        estimate simply carries forward from the last batch they appeared
+        in) -- this is exactly the "lightning-strike samples appearing once
+        or twice per mini-batch" scenario the architecture doc calls out.
+        """
+        f = F.normalize(feat, dim=1)
+        for c in labels.unique():
+            c = int(c.item())
+            class_feat = f[labels == c]
+            if class_feat.numel() == 0:
+                continue
+            class_mean = F.normalize(class_feat.mean(dim=0), dim=0)
+            if not bool(self.initialized[c]):
+                self.prototypes[c] = class_mean
+                self.initialized[c] = True
+            else:
+                self.prototypes[c] = (
+                    self.momentum * self.prototypes[c] + (1.0 - self.momentum) * class_mean
+                )
+
 
 # ======================================================================
 # Full model
 # ======================================================================
 class WTBDefectNet(nn.Module):
     def __init__(self, num_classes: int = 9, widths=(64, 128, 256, 512),
-                 tau: float = 16.0, lam: float = 1.0):
+                 tau: float = 16.0, lam: float = 1.0, proto_momentum: float = 0.9):
         super().__init__()
         self.stem = DSPS(3, widths[0])
         self.stage1 = Stage(widths[0], widths[0], downsample=False, extra=None)
@@ -363,7 +468,7 @@ class WTBDefectNet(nn.Module):
         self.stage3 = Stage(widths[1], widths[2], downsample=True, extra="wgfr")
         self.stage4 = Stage(widths[2], widths[3], downsample=True, extra="msca")
         self.gap = nn.AdaptiveAvgPool2d(1)
-        self.head = LTCP(widths[3], num_classes, tau=tau, lam=lam)
+        self.head = LTCP(widths[3], num_classes, tau=tau, lam=lam, momentum=proto_momentum)
         self.feat_dim = widths[3]
 
     def forward(self, x: torch.Tensor):
@@ -372,7 +477,7 @@ class WTBDefectNet(nn.Module):
         x = self.stage2(x)
         x = self.stage3(x)
         x = self.stage4(x)
-        self._last_feat_map = x        # kept around for Grad-CAM later
+        self._last_feat_map = x        # kept around for Grad-CAM
         feat = self.gap(x).flatten(1)
         logits, f = self.head(feat)
         return logits, f

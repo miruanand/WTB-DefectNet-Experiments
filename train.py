@@ -48,9 +48,15 @@ def parse_args() -> Config:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data_root", type=str, default=None)
     ap.add_argument("--out_dir", type=str, default=None)
+    ap.add_argument("--exp_name", type=str, default=None,
+                     help="Shortcut for --out_dir ./runs/<exp_name>. "
+                          "Ignored if --out_dir is also given.")
     ap.add_argument("--epochs", type=int, default=None)
     ap.add_argument("--batch_size", type=int, default=None)
     ap.add_argument("--num_workers", type=int, default=None)
+    ap.add_argument("--require_gpu", action="store_true",
+                     help="Hard-stop immediately if no CUDA GPU is detected, instead "
+                          "of silently training on CPU for hours.")
     ap.add_argument("--resume", action="store_true",
                      help="Resume from <out_dir>/checkpoints/last.pt if it exists.")
     ap.add_argument("--resume_path", type=str, default=None,
@@ -62,6 +68,8 @@ def parse_args() -> Config:
         val = getattr(args, field)
         if val is not None:
             setattr(cfg, field, val)
+    if args.out_dir is None and args.exp_name is not None:
+        cfg.out_dir = os.path.join(".", "runs", args.exp_name)
     return cfg, args
 
 
@@ -118,7 +126,14 @@ def run_validation(model, loader, criterion, device, channels_last: bool):
 def main():
     cfg, args = parse_args()
     set_seed(cfg.seed)
-    device = get_device()
+    device = get_device(require_gpu=args.require_gpu)
+
+    if device.type == "cpu" and cfg.num_workers > 2:
+        print(f"[train] No GPU: reducing num_workers from {cfg.num_workers} to 2. "
+              f"On CPU, extra DataLoader worker processes compete with training "
+              f"for the same cores and add memory pressure -- a likely contributor "
+              f"to the access-violation crash from your last run.")
+        cfg.num_workers = 2
     ensure_out_dir(cfg.out_dir)
     ckpt_dir = os.path.join(cfg.out_dir, "checkpoints")
     last_path = os.path.join(ckpt_dir, "last.pt")
@@ -140,7 +155,8 @@ def main():
     )
 
     model = WTBDefectNet(
-        num_classes=NUM_CLASSES, widths=cfg.widths, tau=cfg.tau, lam=cfg.lam
+        num_classes=NUM_CLASSES, widths=cfg.widths, tau=cfg.tau, lam=cfg.lam,
+        proto_momentum=cfg.proto_momentum,
     ).to(device)
     if cfg.channels_last:
         model = model.to(memory_format=torch.channels_last)
@@ -190,8 +206,8 @@ def main():
     log_writer = csv.writer(log_file)
     if write_header:
         log_writer.writerow([
-            "epoch", "train_loss", "val_loss", "val_macro_f1", "val_balanced_acc",
-            "lr", "epoch_seconds",
+            "epoch", "train_loss", "train_acc", "val_loss", "val_acc",
+            "val_macro_f1", "val_balanced_acc", "lr", "epoch_seconds",
         ])
         log_file.flush()
 
@@ -213,10 +229,12 @@ def main():
     print(f"[train] {steps_per_epoch} optimizer steps/epoch, "
           f"{cfg.epochs - start_epoch} epochs remaining (of {cfg.epochs} total)")
 
+    best_epoch = start_epoch   # fallback if resuming and no new best is found this run
+
     for epoch in range(start_epoch, cfg.epochs):
         model.train()
         epoch_start = time.time()
-        running_loss, n_seen = 0.0, 0
+        running_loss, n_seen, running_correct = 0.0, 0, 0
         optimizer.zero_grad(set_to_none=True)
 
         for step, (imgs, labels) in enumerate(train_loader):
@@ -247,7 +265,13 @@ def main():
                 scheduler.step()
                 global_step += 1
 
+            # EMA-update the LTCP prototype memory bank from this batch's
+            # features (after the optimizer step, so it tracks the current
+            # feature space). Classes absent from this batch are untouched.
+            model.head.update_prototypes(feat.detach(), labels)
+
             running_loss += loss.item() * imgs.size(0)
+            running_correct += (logits.argmax(dim=1) == labels).sum().item()
             n_seen += imgs.size(0)
 
             if (step + 1) % cfg.log_every == 0:
@@ -256,12 +280,14 @@ def main():
                       f"loss {loss.item():.4f}  lr {lr_now:.2e}")
 
         train_loss = running_loss / max(1, n_seen)
+        train_acc = running_correct / max(1, n_seen)
         val_metrics = run_validation(model, val_loader, criterion, device, cfg.channels_last)
         epoch_seconds = time.time() - epoch_start
         lr_now = optimizer.param_groups[0]["lr"]
 
         print(f"[epoch {epoch+1}/{cfg.epochs}] "
-              f"train_loss {train_loss:.4f}  val_loss {val_metrics['loss']:.4f}  "
+              f"train_loss {train_loss:.4f}  train_acc {train_acc:.4f}  "
+              f"val_loss {val_metrics['loss']:.4f}  val_acc {val_metrics['accuracy']:.4f}  "
               f"val_macro_f1 {val_metrics['macro_f1']:.4f}  "
               f"val_balanced_acc {val_metrics['balanced_acc']:.4f}  "
               f"({epoch_seconds:.1f}s/epoch)")
@@ -271,7 +297,8 @@ def main():
         print(f"           ETA to epoch {cfg.epochs} (if no early stop): {eta}")
 
         log_writer.writerow([
-            epoch + 1, f"{train_loss:.6f}", f"{val_metrics['loss']:.6f}",
+            epoch + 1, f"{train_loss:.6f}", f"{train_acc:.6f}",
+            f"{val_metrics['loss']:.6f}", f"{val_metrics['accuracy']:.6f}",
             f"{val_metrics['macro_f1']:.6f}", f"{val_metrics['balanced_acc']:.6f}",
             f"{lr_now:.8f}", f"{epoch_seconds:.2f}",
         ])
@@ -286,6 +313,7 @@ def main():
             early_stopping=early_stopping,
         )
         if is_best:
+            best_epoch = epoch   # BUGFIX: remember which epoch this actually was
             save_checkpoint(
                 best_path, model, CLASS_NAMES, epoch, early_stopping.best,
                 optimizer=optimizer, scheduler=scheduler, scaler=scaler,
@@ -311,7 +339,7 @@ def main():
     log_file.close()
     early_stopping.restore_best(model)
     save_checkpoint(
-        best_path, model, CLASS_NAMES, epoch, early_stopping.best,
+        best_path, model, CLASS_NAMES, best_epoch, early_stopping.best,
         optimizer=optimizer, scheduler=scheduler, scaler=scaler,
         early_stopping=early_stopping,
     )

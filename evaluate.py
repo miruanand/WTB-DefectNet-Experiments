@@ -29,7 +29,8 @@ import torch
 import matplotlib
 matplotlib.use("Agg")   # no display needed, just save PNGs
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc
+from sklearn.preprocessing import label_binarize
 
 from wtb.config import Config, CLASS_NAMES, NUM_CLASSES, set_seed, get_device
 from wtb.model import WTBDefectNet
@@ -55,15 +56,55 @@ def parse_args():
 @torch.no_grad()
 def run_inference(model, loader, device, channels_last: bool):
     model.eval()
-    y_true, y_pred = [], []
+    y_true, y_pred, y_prob = [], [], []
     for imgs, labels in loader:
         imgs = imgs.to(device, non_blocking=True)
         if channels_last:
             imgs = imgs.to(memory_format=torch.channels_last)
         logits, _ = model(imgs)
+        probs = torch.softmax(logits, dim=1)
         y_pred.extend(logits.argmax(dim=1).cpu().tolist())
+        y_prob.extend(probs.cpu().tolist())
         y_true.extend(labels.tolist())
-    return y_true, y_pred
+    return y_true, y_pred, np.array(y_prob)
+
+
+def plot_roc_curves(y_true, y_prob: np.ndarray, class_names, out_path: str) -> dict:
+    """
+    One-vs-rest ROC curve + AUC per class, all on one figure, plus the
+    micro-average ROC. Returns a {class_name: auc} dict for test_metrics.json.
+    """
+    n_classes = len(class_names)
+    y_true_bin = label_binarize(y_true, classes=list(range(n_classes)))
+
+    fig, ax = plt.subplots(figsize=(9, 8))
+    per_class_auc = {}
+    for i, name in enumerate(class_names):
+        # a class can be entirely absent/present in y_true_bin[:, i]; guard it
+        if y_true_bin[:, i].sum() == 0 or y_true_bin[:, i].sum() == len(y_true_bin):
+            per_class_auc[name] = float("nan")
+            continue
+        fpr, tpr, _ = roc_curve(y_true_bin[:, i], y_prob[:, i])
+        roc_auc = auc(fpr, tpr)
+        per_class_auc[name] = roc_auc
+        ax.plot(fpr, tpr, linewidth=1.5, label=f"{name} (AUC={roc_auc:.3f})")
+
+    fpr_micro, tpr_micro, _ = roc_curve(y_true_bin.ravel(), y_prob.ravel())
+    auc_micro = auc(fpr_micro, tpr_micro)
+    ax.plot(fpr_micro, tpr_micro, color="black", linestyle="--", linewidth=2,
+            label=f"micro-average (AUC={auc_micro:.3f})")
+
+    ax.plot([0, 1], [0, 1], color="gray", linestyle=":", linewidth=1)
+    ax.set_xlabel("False Positive Rate")
+    ax.set_ylabel("True Positive Rate")
+    ax.set_title("Test-set ROC curves (one-vs-rest)")
+    ax.legend(loc="lower right", fontsize=8)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=200)
+    plt.close(fig)
+
+    per_class_auc["micro_average"] = auc_micro
+    return per_class_auc
 
 
 def plot_confusion_matrix(cm: np.ndarray, class_names, out_path: str):
@@ -120,7 +161,7 @@ def main():
 
     print(f"[evaluate] Running inference on the TEST set "
           f"({len(test_loader.dataset)} images) -- this is a ONE-TIME touch.")
-    y_true, y_pred = run_inference(model, test_loader, device, cfg.channels_last)
+    y_true, y_pred, y_prob = run_inference(model, test_loader, device, cfg.channels_last)
 
     metrics = compute_metrics(y_true, y_pred, NUM_CLASSES)
     cm = confusion_matrix(y_true, y_pred, labels=list(range(NUM_CLASSES)))
@@ -131,7 +172,13 @@ def main():
     eval_dir = os.path.join(cfg.out_dir, "eval")
     os.makedirs(eval_dir, exist_ok=True)
 
+    roc_auc_per_class = plot_roc_curves(
+        y_true, y_prob, classes, os.path.join(eval_dir, "roc_curves.png")
+    )
+    metrics["roc_auc"] = roc_auc_per_class
+
     print("\n=== TEST SET RESULTS ===")
+    print(f"  accuracy        : {metrics['accuracy']:.4f}")
     print(f"  macro precision : {metrics['macro_precision']:.4f}")
     print(f"  macro recall    : {metrics['macro_recall']:.4f}")
     print(f"  macro F1        : {metrics['macro_f1']:.4f}")
@@ -160,6 +207,7 @@ def main():
     print(f"    {eval_dir}\\test_metrics.json")
     print(f"    {eval_dir}\\classification_report.txt")
     print(f"    {eval_dir}\\confusion_matrix.png")
+    print(f"    {eval_dir}\\roc_curves.png")
     print("\n[evaluate] Next: python gradcam.py --data_root <...> --checkpoint "
           f"{args.checkpoint} --out_dir {cfg.out_dir}")
 

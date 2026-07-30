@@ -12,6 +12,16 @@ import random
 import dataclasses
 from typing import List, Optional
 
+# Must be set BEFORE torch/numpy get imported anywhere, and this is the
+# first module every entrypoint (train.py/evaluate.py/gradcam.py) imports,
+# so this is the one place to put it. Fixes:
+#   "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll
+#    already initialized" -- a duplicate-OpenMP-runtime conflict that's
+#    extremely common with Anaconda + PyTorch + numpy/MKL on Windows, and
+#    which killed train.py immediately (exit code 3) on your first two
+#    attempts before any epoch even started.
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 import numpy as np
 import torch
 
@@ -54,6 +64,7 @@ class Config:
     widths: tuple = (64, 128, 256, 512)
     tau: float = 16.0                  # LTCP cosine-logit temperature
     lam: float = 1.0                   # LTCP logit-adjustment strength
+    proto_momentum: float = 0.9        # LTCP EMA prototype-update momentum
 
     # ---- optimization (from your plan doc, section 5) ----
     batch_size: int = 32
@@ -86,25 +97,49 @@ def set_seed(seed: int = 42) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-def get_device(verbose: bool = True) -> torch.device:
+def get_device(verbose: bool = True, require_gpu: bool = False) -> torch.device:
     """
-    Picks CUDA if present and prints a clear diagnostic. Designed for a
-    dedicated GPU box, not Colab — no drive mounting, no !pip magics.
+    Picks CUDA if present and prints a LOUD, impossible-to-miss diagnostic
+    (previous version's single print line was easy to lose in scrollback /
+    got silently dropped from pipeline_log.txt due to Windows stdout
+    buffering when the child process wasn't run with -u).
+
+    require_gpu=True hard-stops immediately if no CUDA GPU is found, instead
+    of quietly training on CPU for hours. Use --require_gpu on train.py.
     """
+    banner = "=" * 60
     if torch.cuda.is_available():
         device = torch.device("cuda")
         if verbose:
             idx = torch.cuda.current_device()
             name = torch.cuda.get_device_name(idx)
             vram = torch.cuda.get_device_properties(idx).total_memory / (1024 ** 3)
-            print(f"[config] Using GPU: {name} ({vram:.1f} GB VRAM)")
+            print(banner)
+            print(f"[config] DEVICE = GPU  ({name}, {vram:.1f} GB VRAM)")
+            print(banner)
             torch.backends.cudnn.benchmark = True   # fixed input size -> faster convs
     else:
         device = torch.device("cpu")
         if verbose:
-            print("[config] WARNING: no CUDA GPU detected, falling back to CPU. "
-                  "Training WTB-DefectNet on CPU will be extremely slow — "
-                  "check your CUDA / driver install if you expected a GPU here.")
+            print(banner)
+            print("[config] DEVICE = CPU  --  NO CUDA GPU DETECTED.")
+            print("[config] Training on CPU will be extremely slow (likely 10-30x "
+                  "slower per epoch than GPU). Most common causes on a Windows/"
+                  "Anaconda box:")
+            print("[config]   1. PyTorch was installed as the CPU-only build. Check "
+                  "with: python -c \"import torch; print(torch.__version__, "
+                  "torch.version.cuda)\" -- if torch.version.cuda prints None, "
+                  "reinstall from https://pytorch.org/get-started/locally/ picking "
+                  "your CUDA version.")
+            print("[config]   2. NVIDIA driver / CUDA toolkit not installed or not on "
+                  "PATH -- check with: nvidia-smi")
+            print(banner)
+        if require_gpu:
+            raise RuntimeError(
+                "[config] --require_gpu was set and no CUDA GPU was detected. "
+                "Stopping now instead of silently training on CPU for hours. "
+                "See the diagnostics printed above."
+            )
     return device
 
 
