@@ -1,0 +1,46 @@
+{
+  "checkpoint": "D:\\23BLC1224_Mirunalini_FYP1_Karthik_Sir\\wtb_defectnet\\runs\\Try_2\\checkpoints\\best.pt",
+  "checkpoint_epoch": 109,
+  "n_test_images": 1509,
+  "class_names": [
+    "oil leakage",
+    "paint cracks",
+    "localized damage",
+    "lightning strikes",
+    "surface stains",
+    "erosion",
+    "coating detachment",
+    "protective film damage",
+    "pinholes"
+  ],
+  "accuracy": 0.6235917826375083,
+  "macro_precision": 0.57598466308523,
+  "macro_recall": 0.6539279732043166,
+  "macro_f1": 0.5923628891883773,
+  "balanced_acc": 0.6539279732043166,
+  "kappa": 0.5502424280586864,
+  "mcc": 0.5580640917820849,
+  "per_class_f1": [
+    0.9952153110047847,
+    0.4186046511627907,
+    0.28484848484848485,
+    0.8235294117647058,
+    0.27380952380952384,
+    0.7649484536082474,
+    0.6028708133971292,
+    0.5485714285714286,
+    0.6188679245283019
+  ],
+  "roc_auc": {
+    "oil leakage": 1.0,
+    "paint cracks": 0.8637205253995885,
+    "localized damage": 0.8281834505461619,
+    "lightning strikes": 0.9964235658015562,
+    "surface stains": 0.8208195106780013,
+    "erosion": 0.9469102814993227,
+    "coating detachment": 0.8919048094619851,
+    "protective film damage": 0.9334589641952044,
+    "pinholes": 0.9406841476450984,
+    "micro_average": 0.923887314504842
+  }
+}

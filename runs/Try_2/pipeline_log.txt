@@ -1,0 +1,558 @@
+
+
+########## PIPELINE START 2026-07-29T12:39:50.548756 (exp_name=Try_2) ##########
+
+======================================================================
+[2026-07-29T12:39:50] RUNNING: C:\Users\Admin\anaconda3\python.exe train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume
+======================================================================
+OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized.
+OMP: Hint This means that multiple copies of the OpenMP runtime have been linked into the program. That is dangerous, since it can degrade performance or cause incorrect results. The best thing to do is to ensure that only a single OpenMP runtime is linked into the process, e.g. by avoiding static linking of the OpenMP runtime in any library. As an unsafe, unsupported, undocumented workaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect results. For more information, please see http://www.intel.com/software/products/support/.
+
+[run_experiment] STEP FAILED (exit code 3): C:\Users\Admin\anaconda3\python.exe train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume
+
+
+########## PIPELINE START 2026-07-29T12:40:23.132191 (exp_name=Try_2) ##########
+
+======================================================================
+[2026-07-29T12:40:23] RUNNING: C:\Users\Admin\anaconda3\python.exe train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume
+======================================================================
+OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized.
+OMP: Hint This means that multiple copies of the OpenMP runtime have been linked into the program. That is dangerous, since it can degrade performance or cause incorrect results. The best thing to do is to ensure that only a single OpenMP runtime is linked into the process, e.g. by avoiding static linking of the OpenMP runtime in any library. As an unsafe, unsupported, undocumented workaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect results. For more information, please see http://www.intel.com/software/products/support/.
+
+[run_experiment] STEP FAILED (exit code 3): C:\Users\Admin\anaconda3\python.exe train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume
+
+
+########## PIPELINE START 2026-07-29T12:45:37.926745 (exp_name=Try_2) ##########
+
+======================================================================
+[2026-07-29T12:45:37] RUNNING: C:\Users\Admin\anaconda3\python.exe train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume
+======================================================================
+D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py:165: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(cfg.amp and device.type == "cuda"))
+C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\dataloader.py:1118: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  super().__init__(loader)
+
+[run_experiment] STEP FAILED (exit code 3221225477): C:\Users\Admin\anaconda3\python.exe train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume
+
+
+########## PIPELINE START 2026-07-30T09:44:52.436551 (exp_name=Try_2) ##########
+
+======================================================================
+[2026-07-30T09:44:52] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+C:\Users\Admin\anaconda3\Lib\site-packages\torch\cuda\__init__.py:180: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 2: out of memory (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\c10\cuda\CUDAFunctions.cpp:119.)
+  return torch._C._cuda_getDeviceCount() > 0
+============================================================
+[config] DEVICE = CPU  --  NO CUDA GPU DETECTED.
+[config] Training on CPU will be extremely slow (likely 10-30x slower per epoch than GPU). Most common causes on a Windows/Anaconda box:
+[config]   1. PyTorch was installed as the CPU-only build. Check with: python -c "import torch; print(torch.__version__, torch.version.cuda)" -- if torch.version.cuda prints None, reinstall from https://pytorch.org/get-started/locally/ picking your CUDA version.
+[config]   2. NVIDIA driver / CUDA toolkit not installed or not on PATH -- check with: nvidia-smi
+============================================================
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 353, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 129, in main
+    device = get_device(require_gpu=args.require_gpu)
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\wtb\config.py", line 138, in get_device
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: [config] --require_gpu was set and no CUDA GPU was detected. Stopping now instead of silently training on CPU for hours. See the diagnostics printed above.
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+======================================================================
+[2026-07-30T09:45:21] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_2
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 353, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 160, in main
+    ).to(device)
+      ~~^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1384, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 965, in _apply
+    param_applied = fn(param)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1370, in convert
+    return t.to(
+           ~~~~^
+        device,
+        ^^^^^^^
+        dtype if t.is_floating_point() or t.is_complex() else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        non_blocking,
+        ^^^^^^^^^^^^^
+    )
+    ^
+torch.AcceleratorError: CUDA error: out of memory
+Search for `cudaErrorMemoryAllocation' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+======================================================================
+[2026-07-30T09:46:08] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_2
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 353, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 160, in main
+    ).to(device)
+      ~~^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1384, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 965, in _apply
+    param_applied = fn(param)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1370, in convert
+    return t.to(
+           ~~~~^
+        device,
+        ^^^^^^^
+        dtype if t.is_floating_point() or t.is_complex() else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        non_blocking,
+        ^^^^^^^^^^^^^
+    )
+    ^
+torch.AcceleratorError: CUDA error: out of memory
+Search for `cudaErrorMemoryAllocation' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+======================================================================
+[2026-07-30T09:46:40] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_2
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 353, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 160, in main
+    ).to(device)
+      ~~^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1384, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 965, in _apply
+    param_applied = fn(param)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1370, in convert
+    return t.to(
+           ~~~~^
+        device,
+        ^^^^^^^
+        dtype if t.is_floating_point() or t.is_complex() else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        non_blocking,
+        ^^^^^^^^^^^^^
+    )
+    ^
+torch.AcceleratorError: CUDA error: CUDA-capable device(s) is/are busy or unavailable
+Search for `cudaErrorDevicesUnavailable' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+
+########## PIPELINE START 2026-07-30T09:47:46.212084 (exp_name=Try_2) ##########
+
+======================================================================
+[2026-07-30T09:47:46] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_2
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 353, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 160, in main
+    ).to(device)
+      ~~^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1384, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 965, in _apply
+    param_applied = fn(param)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1370, in convert
+    return t.to(
+           ~~~~^
+        device,
+        ^^^^^^^
+        dtype if t.is_floating_point() or t.is_complex() else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        non_blocking,
+        ^^^^^^^^^^^^^
+    )
+    ^
+torch.AcceleratorError: CUDA error: out of memory
+Search for `cudaErrorMemoryAllocation' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+======================================================================
+[2026-07-30T09:48:17] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_2
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 353, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 160, in main
+    ).to(device)
+      ~~^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1384, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 965, in _apply
+    param_applied = fn(param)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1370, in convert
+    return t.to(
+           ~~~~^
+        device,
+        ^^^^^^^
+        dtype if t.is_floating_point() or t.is_complex() else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        non_blocking,
+        ^^^^^^^^^^^^^
+    )
+    ^
+torch.AcceleratorError: CUDA error: out of memory
+Search for `cudaErrorMemoryAllocation' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+======================================================================
+[2026-07-30T09:48:47] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_2
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+
+[run_experiment] STEP FAILED (exit code 3221225477): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+======================================================================
+[2026-07-30T09:51:12] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_2
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 353, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 160, in main
+    ).to(device)
+      ~~^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1384, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 965, in _apply
+    param_applied = fn(param)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1370, in convert
+    return t.to(
+           ~~~~^
+        device,
+        ^^^^^^^
+        dtype if t.is_floating_point() or t.is_complex() else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        non_blocking,
+        ^^^^^^^^^^^^^
+    )
+    ^
+torch.AcceleratorError: CUDA error: out of memory
+Search for `cudaErrorMemoryAllocation' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+======================================================================
+[2026-07-30T09:51:37] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_2
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 353, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 160, in main
+    ).to(device)
+      ~~^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1384, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 934, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  [Previous line repeated 1 more time]
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 965, in _apply
+    param_applied = fn(param)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1370, in convert
+    return t.to(
+           ~~~~^
+        device,
+        ^^^^^^^
+        dtype if t.is_floating_point() or t.is_complex() else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        non_blocking,
+        ^^^^^^^^^^^^^
+    )
+    ^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 23.99 GiB of which 22.71 GiB is free. Of the allocated memory 1.58 MiB is allocated by PyTorch, and 433.50 KiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_2 --resume --require_gpu
+
+======================================================================
+[2026-07-30T09:52:17] RUNNING: C:\Users\Admin\anaconda3\python.exe -u evaluate.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --checkpoint D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_2\checkpoints\best.pt --out_dir D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_2
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[evaluate] Rebuilding the same 60:20:20 split (seed=42) used during training -- only the test_loader below will be used.
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+[evaluate] Loading checkpoint: D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_2\checkpoints\best.pt
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\evaluate.py", line 216, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\evaluate.py", line 149, in main
+    ckpt = load_checkpoint(args.checkpoint, map_location=device)
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\wtb\utils.py", line 127, in load_checkpoint
+    return torch.load(path, map_location=map_location)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\serialization.py", line 1570, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\serialization.py", line 2190, in _load
+    result = unpickler.load()
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\_weights_only_unpickler.py", line 541, in load
+    self.append(self.persistent_load(pid))
+                ~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\serialization.py", line 2154, in persistent_load
+    typed_storage = load_tensor(
+        dtype, nbytes, key, _maybe_decode_ascii(location)
+    )
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\serialization.py", line 2097, in load_tensor
+    zip_file.get_storage_from_record(name, nbytes, torch.UntypedStorage)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: [enforce fail at alloc_cpu.cpp:117] data. DefaultCPUAllocator: not enough memory: you tried to allocate 9437184 bytes.
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u evaluate.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --checkpoint D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_2\checkpoints\best.pt --out_dir D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_2
+
+======================================================================
+[2026-07-30T09:54:14] RUNNING: C:\Users\Admin\anaconda3\python.exe -u plot_curves.py --run_dir D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_2
+======================================================================
