@@ -41,22 +41,37 @@ found and fixed:
      ("Feature Concatenation" -> "1x1 Pointwise Convolution") instead of
      Try_2's per-branch-then-final double pointwise.
 
-  2. Transition Layer AvgPool blur. The doc lists the downsample step as
-     "2x2 Average Pooling (OR Strided Convolution)" -- AvgPool is only one
-     of two doc-sanctioned options. Plain averaging smears exactly the
-     fine defect boundaries (hairline cracks, pinhole edges) this network
-     is supposed to preserve, at every one of the 3 stage transitions.
-     Switched to the doc's other listed option: a learned stride-2
-     depthwise conv (cheap -- only `out_ch` extra weights per transition)
-     so edge-relevant activations survive the downsample instead of being
-     blurred away.
+  2. Transition Layer AvgPool blur (tried in Try_3, REVERTED here). The
+     doc lists the downsample step as "2x2 Average Pooling (OR Strided
+     Convolution)". Try_3 swapped AvgPool for a randomly-initialized
+     learned stride-2 depthwise conv at all 3 stage transitions. Result:
+     val_macro_f1 stopped climbing and oscillated hard (0.44/0.35/0.47/
+     0.39/...) instead of trending up like exp1 did over the same epochs,
+     and early stopping triggered at epoch 43 with best=0.4766 -- worse
+     than both exp1 and Try_2 at that point. AvgPool is parameter-free and
+     behaves identically from epoch 1; 3 randomly-initialized learnable
+     downsamplers stacked in series have to individually find their way to
+     something useful before they stop actively distorting the feature
+     maps, which is a much more plausible explanation for the instability
+     than the DSPS change (which only touches the stem, once). REVERTED
+     back to AvgPool for this run -- still one of the doc's two listed
+     options, and the one with an actual stable track record on this
+     dataset. The learned-downsample idea isn't necessarily wrong, but it
+     needs a gentler entry (e.g. average-kernel initialization) to be
+     tested properly, which is future work, not this run.
 
   3. Added a light dropout (`head_dropout`, default 0.15, see config.py)
-     on the pooled feature vector right before LTCP. The capacity fixes
-     above make the backbone strictly more expressive, which raises
+     on the pooled feature vector right before LTCP. The capacity fix in
+     (1) makes the backbone strictly more expressive, which raises
      overfitting risk on a 9-class, ~4.5k-image train set; this keeps
      train/val from diverging again without limiting what the corrected
-     stem/transitions can represent.
+     stem can represent.
+
+  4. `patience` raised 20 -> 35 (config.py). exp1's own best epoch was
+     120 (the very last one) and it was still improving at epoch 43
+     (0.578 and climbing) -- a 20-epoch patience window is short relative
+     to how slowly this model's val_macro_f1 trends upward, and it cut
+     Try_3 off well before it could recover from a noisy patch.
 
 TSDB, ASA, DRFB, WGFR, MSCA, and LTCP itself are unchanged from Try_2 --
 the per-class breakdown didn't point at them (rare-class recall was
@@ -349,20 +364,20 @@ class MSCA(nn.Module):
 # ======================================================================
 class TransitionLayer(nn.Module):
     """
-    1x1 Conv -> BN -> GELU -> downsample, as listed in the doc's
+    1x1 Conv -> BN -> GELU -> 2x2 AvgPool, as listed in the doc's
     "Transition Layer" section: "2x2 Average Pooling (or Strided
     Convolution)". Used between Stage1->2, Stage2->3, Stage3->4.
 
-    Try_2 used AvgPool for the downsample step. Plain averaging blurs
-    exactly the fine defect boundaries (hairline cracks, pinhole edges)
-    this network needs to keep, at all 3 stage transitions -- and per-class
-    F1 dropped almost everywhere between exp1 and Try_2, not just on
-    texture-heavy classes, consistent with this being a real information
-    loss rather than noise. Switched to the doc's other listed option: a
-    learned stride-2 DEPTHWISE conv (cheap -- only `out_ch` extra weights
-    per transition, so this doesn't reopen the overfitting gap) so
-    edge-relevant activations survive the downsample instead of being
-    averaged away.
+    Try_3 swapped this for a learned stride-2 depthwise conv (the doc's
+    other listed option). That run's val_macro_f1 oscillated hard instead
+    of trending up and early-stopped at a worse point than either exp1 or
+    Try_2 -- most likely because 3 randomly-initialized learnable
+    downsamplers in series have to each learn their way to something
+    useful before they stop distorting the feature maps, unlike AvgPool
+    which is parameter-free and behaves identically from epoch 1. Reverted
+    to AvgPool here since it has an actual stable track record on this
+    dataset; the learned-downsample idea would need a gentler entry (e.g.
+    average-kernel initialization) to be worth re-testing.
     """
 
     def __init__(self, in_ch: int, out_ch: int):
@@ -370,15 +385,10 @@ class TransitionLayer(nn.Module):
         self.proj = nn.Conv2d(in_ch, out_ch, 1)
         self.bn = nn.BatchNorm2d(out_ch)
         self.act = nn.GELU()
-        self.down = nn.Conv2d(out_ch, out_ch, kernel_size=3, stride=2,
-                               padding=1, groups=out_ch)
-        self.down_bn = nn.BatchNorm2d(out_ch)
-        self.down_act = nn.GELU()
+        self.pool = nn.AvgPool2d(2, stride=2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.act(self.bn(self.proj(x)))
-        x = self.down_act(self.down_bn(self.down(x)))
-        return x
+        return self.pool(self.act(self.bn(self.proj(x))))
 
 
 # ======================================================================

@@ -73,7 +73,9 @@ class Config:
     base_lr: float = 3e-4
     weight_decay: float = 0.05
     warmup_epochs: int = 5
-    patience: int = 20                 # early stopping, on val macro-F1
+    patience: int = 35                 # early stopping, on val macro-F1 (was 20 -- too
+                                        # short: exp1's own best epoch was 120/120, and
+                                        # Try_3 got cut off mid-recovery at patience=20)
     grad_accum_steps: int = 1          # bump this if you must lower batch_size for VRAM
     max_grad_norm: float = 5.0         # gradient clipping, stabilizes AMP training
 
