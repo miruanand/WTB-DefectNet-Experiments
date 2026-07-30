@@ -156,7 +156,7 @@ def main():
 
     model = WTBDefectNet(
         num_classes=NUM_CLASSES, widths=cfg.widths, tau=cfg.tau, lam=cfg.lam,
-        proto_momentum=cfg.proto_momentum,
+        proto_momentum=cfg.proto_momentum, head_dropout=cfg.head_dropout,
     ).to(device)
     if cfg.channels_last:
         model = model.to(memory_format=torch.channels_last)

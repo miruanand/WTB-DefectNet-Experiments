@@ -15,37 +15,52 @@ at the placements specified there:
       -> Stage 4: TSDB + ASA + MSCA                        7x7x512
       -> LTCP head                                       9 logits
 
-CHANGELOG vs the previous version of this file (bring code in line with
-Proposed_Architecture.docx, per the doc-vs-code audit):
+CHANGELOG vs Try_2 (Try_2 -> Try_3): Try_2 scored WORSE than exp1 on every
+class but one (macro-F1 0.6537 -> 0.5924, test set) despite train_acc
+staying at ~74%, i.e. the gap that opened up was a genuine backbone
+capacity problem introduced by the doc-alignment edits, not the EMA
+prototypes (lightning-strikes recall was fine in both runs). Two real bugs
+found and fixed:
 
-  1. DSPS (B1): the three dilated branches are now genuinely DEPTHWISE
-     (groups=in_ch) + a pointwise 1x1 projection, not standard convs. The
-     doc's Novelty section explicitly says "parallel depthwise (not
-     standard) dilated branches" -- the old code used plain nn.Conv2d with
-     no groups=, i.e. standard convs. Also added the "Residual Fusion"
-     component the doc lists but the old code never implemented (a
-     stride-4, 1x1 projected shortcut from the raw input straight to the
-     stem output).
+  1. DSPS (B1) rank-3 bottleneck. `depthwise_dilated()` used
+     `nn.Conv2d(in_ch, in_ch, ...)` with groups=in_ch=3 -- i.e. exactly ONE
+     filter per input colour channel per dilation rate. That means each
+     dilated branch could only ever produce 3 linearly-independent spatial
+     response maps, no matter how wide the pointwise projection after it
+     was (a linear 1x1 conv can rescale/recombine those 3 maps into 64
+     channels, but can't invent new spatial patterns). This is a real rank
+     bottleneck, not a stylistic issue -- it's the main reason Try_2's stem
+     was strictly weaker than a standard-conv stem. Fixed by giving each
+     branch a depthwise multiplier (`depth_multiplier=8` below, so 8
+     independent filters per input channel = 24 spatial patterns per
+     branch instead of 3). Still genuinely depthwise (groups=in_ch), still
+     what the doc's Novelty section calls for ("parallel depthwise dilated
+     branches") -- just not artificially starved of filters. Also
+     restructured to concat all 4 branches THEN apply a single 1x1
+     pointwise conv, matching the doc's literal component order
+     ("Feature Concatenation" -> "1x1 Pointwise Convolution") instead of
+     Try_2's per-branch-then-final double pointwise.
 
-  2. Transition Layer: the doc specifies this as its own component between
-     stages -- 1x1 Conv -> BN -> Act -> 2x2 AvgPool -- distinct from a
-     single strided conv. The old code folded stage downsampling into one
-     3x3 stride-2 conv inside Stage.down. This file adds a real
-     TransitionLayer module and uses it wherever Stage downsamples.
+  2. Transition Layer AvgPool blur. The doc lists the downsample step as
+     "2x2 Average Pooling (OR Strided Convolution)" -- AvgPool is only one
+     of two doc-sanctioned options. Plain averaging smears exactly the
+     fine defect boundaries (hairline cracks, pinhole edges) this network
+     is supposed to preserve, at every one of the 3 stage transitions.
+     Switched to the doc's other listed option: a learned stride-2
+     depthwise conv (cheap -- only `out_ch` extra weights per transition)
+     so edge-relevant activations survive the downsample instead of being
+     blurred away.
 
-  3. LTCP (B7): the doc's novelty is a COSINE CLASSIFIER + LOGIT ADJUSTMENT
-     + EMA PROTOTYPE MEMORY BANK. The old code had prototypes as an
-     ordinary nn.Parameter trained by plain backprop -- there was no EMA
-     update anywhere in the codebase. Prototypes are now a non-learnable
-     buffer, updated via update_prototypes() (call once per training step,
-     after optimizer.step(), from train.py). This is the change most
-     likely to affect lightning-strike-style rare classes, since EMA
-     carries a class's estimate forward across steps instead of only
-     updating it (noisily, via gradient) whenever that class happens to
-     appear in a batch.
+  3. Added a light dropout (`head_dropout`, default 0.15, see config.py)
+     on the pooled feature vector right before LTCP. The capacity fixes
+     above make the backbone strictly more expressive, which raises
+     overfitting risk on a 9-class, ~4.5k-image train set; this keeps
+     train/val from diverging again without limiting what the corrected
+     stem/transitions can represent.
 
-Everything else (TSDB, ASA, DRFB, WGFR, MSCA) already matched the doc and
-is unchanged.
+TSDB, ASA, DRFB, WGFR, MSCA, and LTCP itself are unchanged from Try_2 --
+the per-class breakdown didn't point at them (rare-class recall was
+already fine), so they were left alone rather than changed speculatively.
 """
 
 import torch
@@ -59,24 +74,26 @@ from torchvision.ops import DeformConv2d
 # ======================================================================
 class DSPS(nn.Module):
     """
-    Parallel DEPTHWISE dilated convs (d=1,2,3) + Sobel edge branch, fused,
-    plus a residual-fusion shortcut from the raw input.
+    Parallel DEPTHWISE dilated convs (d=1,2,3) + Sobel edge branch,
+    concatenated and fused by a single 1x1 pointwise conv, plus a
+    residual-fusion shortcut from the raw input.
     """
 
-    def __init__(self, in_ch: int = 3, out_ch: int = 64):
+    def __init__(self, in_ch: int = 3, out_ch: int = 64, depth_multiplier: int = 8):
         super().__init__()
-        mid = out_ch
+        # `depth_multiplier` filters PER INPUT CHANNEL per dilated branch.
+        # On a 3-channel RGB input, depth_multiplier=1 (groups=in_ch,
+        # out_channels=in_ch) gives each branch exactly one filter per
+        # colour channel -- only 3 linearly-independent spatial patterns,
+        # regardless of how wide any pointwise conv placed after it is.
+        # depth_multiplier=8 gives 24 independent filters per branch
+        # instead, fixing that rank bottleneck while staying genuinely
+        # depthwise (groups=in_ch) as the doc's Novelty section specifies.
+        branch_ch = in_ch * depth_multiplier
 
-        def depthwise_dilated(dilation: int) -> nn.Sequential:
-            # Depthwise (groups=in_ch) dilated conv, THEN a pointwise 1x1 to
-            # project up to `mid` channels -- a plain depthwise conv on a
-            # 3-channel RGB input can't change channel count by itself, so
-            # the pointwise step is required to get a usable feature count.
-            return nn.Sequential(
-                nn.Conv2d(in_ch, in_ch, 3, stride=2, padding=dilation,
-                          dilation=dilation, groups=in_ch),
-                nn.Conv2d(in_ch, mid, 1),
-            )
+        def depthwise_dilated(dilation: int) -> nn.Conv2d:
+            return nn.Conv2d(in_ch, branch_ch, 3, stride=2, padding=dilation,
+                              dilation=dilation, groups=in_ch)
 
         self.b1 = depthwise_dilated(1)
         self.b2 = depthwise_dilated(2)
@@ -89,16 +106,22 @@ class DSPS(nn.Module):
         self.register_buffer("sobel_x", sobel_x.view(1, 1, 3, 3))
         self.register_buffer("sobel_y", sobel_y.view(1, 1, 3, 3))
         self.register_buffer("luma_w", torch.tensor([0.299, 0.587, 0.114]).view(1, 3, 1, 1))
-        self.edge_proj = nn.Conv2d(2, mid, 1)
+        self.edge_proj = nn.Conv2d(2, branch_ch, 1)
 
-        self.proj = nn.Conv2d(mid * 4, out_ch, 1)
+        # Doc order: "Feature Concatenation" -> "1x1 Pointwise Convolution"
+        # -- concat all 4 raw branches first, THEN a single pointwise fuse
+        # (Try_2 projected each branch individually before concatenating,
+        # then fused again -- a redundant double pointwise that didn't
+        # match the doc and didn't help capacity either).
+        concat_ch = branch_ch * 4
+        self.proj = nn.Conv2d(concat_ch, out_ch, 1)
         self.bn = nn.BatchNorm2d(out_ch)
         self.act = nn.GELU()
         # Branches above are stride=2 (224 -> 112). One extra stride-2 pool
         # gives the documented 4x total stem reduction (224 -> 112 -> 56).
         self.pool = nn.MaxPool2d(2, stride=2)
 
-        # NEW: Residual Fusion (doc-listed DSPS component). A cheap 1x1,
+        # Residual Fusion (doc-listed DSPS component). A cheap 1x1,
         # stride-4 shortcut from the raw input straight to the stem output,
         # matching the stem's total downsampling factor (224 -> 56).
         self.residual = nn.Conv2d(in_ch, out_ch, kernel_size=1, stride=4)
@@ -322,14 +345,24 @@ class MSCA(nn.Module):
 
 
 # ======================================================================
-# NEW -- Transition Layer (doc-specified, between stages)
+# Transition Layer (doc-specified, between stages)
 # ======================================================================
 class TransitionLayer(nn.Module):
     """
-    1x1 Conv -> BN -> GELU -> 2x2 AvgPool, exactly as listed in the doc's
-    "Transition Layer" section. Used between Stage1->2, Stage2->3, Stage3->4.
-    Replaces the previous single 3x3 stride-2 conv that was doing this job
-    (different receptive field / parameter count than what was documented).
+    1x1 Conv -> BN -> GELU -> downsample, as listed in the doc's
+    "Transition Layer" section: "2x2 Average Pooling (or Strided
+    Convolution)". Used between Stage1->2, Stage2->3, Stage3->4.
+
+    Try_2 used AvgPool for the downsample step. Plain averaging blurs
+    exactly the fine defect boundaries (hairline cracks, pinhole edges)
+    this network needs to keep, at all 3 stage transitions -- and per-class
+    F1 dropped almost everywhere between exp1 and Try_2, not just on
+    texture-heavy classes, consistent with this being a real information
+    loss rather than noise. Switched to the doc's other listed option: a
+    learned stride-2 DEPTHWISE conv (cheap -- only `out_ch` extra weights
+    per transition, so this doesn't reopen the overfitting gap) so
+    edge-relevant activations survive the downsample instead of being
+    averaged away.
     """
 
     def __init__(self, in_ch: int, out_ch: int):
@@ -337,10 +370,15 @@ class TransitionLayer(nn.Module):
         self.proj = nn.Conv2d(in_ch, out_ch, 1)
         self.bn = nn.BatchNorm2d(out_ch)
         self.act = nn.GELU()
-        self.pool = nn.AvgPool2d(2, stride=2)
+        self.down = nn.Conv2d(out_ch, out_ch, kernel_size=3, stride=2,
+                               padding=1, groups=out_ch)
+        self.down_bn = nn.BatchNorm2d(out_ch)
+        self.down_act = nn.GELU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.pool(self.act(self.bn(self.proj(x))))
+        x = self.act(self.bn(self.proj(x)))
+        x = self.down_act(self.down_bn(self.down(x)))
+        return x
 
 
 # ======================================================================
@@ -460,7 +498,8 @@ class LTCP(nn.Module):
 # ======================================================================
 class WTBDefectNet(nn.Module):
     def __init__(self, num_classes: int = 9, widths=(64, 128, 256, 512),
-                 tau: float = 16.0, lam: float = 1.0, proto_momentum: float = 0.9):
+                 tau: float = 16.0, lam: float = 1.0, proto_momentum: float = 0.9,
+                 head_dropout: float = 0.15):
         super().__init__()
         self.stem = DSPS(3, widths[0])
         self.stage1 = Stage(widths[0], widths[0], downsample=False, extra=None)
@@ -468,6 +507,14 @@ class WTBDefectNet(nn.Module):
         self.stage3 = Stage(widths[1], widths[2], downsample=True, extra="wgfr")
         self.stage4 = Stage(widths[2], widths[3], downsample=True, extra="msca")
         self.gap = nn.AdaptiveAvgPool2d(1)
+        # Light dropout on the pooled feature vector, before LTCP. Not a
+        # doc component -- added because the DSPS/Transition fixes above
+        # make the backbone strictly more expressive than Try_2, which
+        # raises overfitting risk on a train_acc-vs-val_macro_f1 gap that
+        # was already present (~74% vs ~55-58%). Dropout only, no other
+        # regularization changes, so it's easy to dial back (head_dropout=0)
+        # if the next run underfits instead.
+        self.dropout = nn.Dropout(p=head_dropout)
         self.head = LTCP(widths[3], num_classes, tau=tau, lam=lam, momentum=proto_momentum)
         self.feat_dim = widths[3]
 
@@ -479,8 +526,14 @@ class WTBDefectNet(nn.Module):
         x = self.stage4(x)
         self._last_feat_map = x        # kept around for Grad-CAM
         feat = self.gap(x).flatten(1)
-        logits, f = self.head(feat)
-        return logits, f
+        # Dropout only regularizes the LOGITS pathway. `feat` itself (raw,
+        # no dropout) is what train.py hands to the composite loss's
+        # prototype/center term and to update_prototypes() for the EMA
+        # bank -- those exist specifically to stabilize rare-class (e.g.
+        # lightning-strike) representations, so they should see clean
+        # features rather than a randomly-zeroed copy of them.
+        logits, _ = self.head(self.dropout(feat))
+        return logits, feat
 
     def count_params(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)

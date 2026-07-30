@@ -65,6 +65,7 @@ class Config:
     tau: float = 16.0                  # LTCP cosine-logit temperature
     lam: float = 1.0                   # LTCP logit-adjustment strength
     proto_momentum: float = 0.9        # LTCP EMA prototype-update momentum
+    head_dropout: float = 0.15         # dropout on pooled features before LTCP
 
     # ---- optimization (from your plan doc, section 5) ----
     batch_size: int = 32
