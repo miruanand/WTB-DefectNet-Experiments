@@ -547,3 +547,123 @@ class WTBDefectNet(nn.Module):
 
     def count_params(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+
+# ======================================================================
+# Optional: ImageNet-pretrained stem, swapped in for DSPS + Stage1
+# ======================================================================
+class PretrainedStem(nn.Module):
+    """
+    Replaces DSPS + Stage1 (TSDB+ASA, no extra block) + the Stage1->2
+    transition with an ImageNet-pretrained torchvision ResNet's
+    conv1+bn+act+maxpool+layer1+layer2. For a 224x224 input this produces
+    a (B, 128, 28, 28) feature map -- the exact resolution/width the doc
+    specifies for the *end* of Stage 2 (before DRFB), so DRFB and
+    everything after it attach completely unchanged.
+
+    This only replaces the generic low/mid-level feature extraction that
+    every from-scratch CNN has to relearn (edges, colour blobs, simple
+    textures) with weights already trained on 1.2M ImageNet images. It
+    does not touch TSDB, ASA, DRFB, WGFR, MSCA, or LTCP -- those, and
+    their doc-specified stage placements, are identical to WTBDefectNet.
+    """
+
+    def __init__(self, arch: str = "resnet18", pretrained: bool = True,
+                 freeze: bool = True):
+        super().__init__()
+        import torchvision.models as tvm
+
+        if arch == "resnet18":
+            weights = tvm.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
+            net = tvm.resnet18(weights=weights)
+        elif arch == "resnet34":
+            weights = tvm.ResNet34_Weights.IMAGENET1K_V1 if pretrained else None
+            net = tvm.resnet34(weights=weights)
+        else:
+            raise ValueError(f"Unknown backbone arch: {arch!r} (expected "
+                              f"'resnet18' or 'resnet34')")
+
+        self.stem = nn.Sequential(net.conv1, net.bn1, net.relu, net.maxpool)  # 56x56x64
+        self.layer1 = net.layer1   # 56x56x64
+        self.layer2 = net.layer2   # 28x28x128
+        self.out_ch = 128
+
+        if freeze:
+            for m in (self.stem, self.layer1, self.layer2):
+                for p in m.parameters():
+                    p.requires_grad = False
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.stem(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        return x
+
+
+class WTBDefectNetHybrid(nn.Module):
+    """
+    Same TSDB/ASA/DRFB/WGFR/MSCA/LTCP blocks, at the same doc-specified
+    stage placements, as WTBDefectNet -- only DSPS + Stage1 are replaced
+    by PretrainedStem. See PretrainedStem's docstring and
+    Config.backbone in config.py for the reasoning.
+    """
+
+    def __init__(self, num_classes: int = 9, backbone: str = "resnet18",
+                 pretrained: bool = True, freeze_stem: bool = True,
+                 widths=(64, 128, 256, 512), tau: float = 16.0, lam: float = 1.0,
+                 proto_momentum: float = 0.9, head_dropout: float = 0.15):
+        super().__init__()
+        self.stem = PretrainedStem(backbone, pretrained=pretrained, freeze=freeze_stem)
+        assert self.stem.out_ch == widths[1], (
+            f"PretrainedStem outputs {self.stem.out_ch} channels but "
+            f"widths[1]={widths[1]} -- Stage2's DRFB/Transition expect these to match."
+        )
+        # Stage 2's DRFB only (no downsampling, no TSDB/ASA re-run -- those
+        # jobs were already done, on real ImageNet-trained features, inside
+        # layer1/layer2 above). Transition into Stage 3 happens inside
+        # `Stage(..., downsample=True, ...)` below, same as WTBDefectNet.
+        self.stage2_drfb = DRFB(widths[1])
+        self.stage3 = Stage(widths[1], widths[2], downsample=True, extra="wgfr")
+        self.stage4 = Stage(widths[2], widths[3], downsample=True, extra="msca")
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.dropout = nn.Dropout(p=head_dropout)
+        self.head = LTCP(widths[3], num_classes, tau=tau, lam=lam, momentum=proto_momentum)
+        self.feat_dim = widths[3]
+
+    def forward(self, x: torch.Tensor):
+        x = self.stem(x)
+        x = self.stage2_drfb(x)
+        x = self.stage3(x)
+        x = self.stage4(x)
+        self._last_feat_map = x
+        feat = self.gap(x).flatten(1)
+        logits, _ = self.head(self.dropout(feat))
+        return logits, feat
+
+    def count_params(self) -> int:
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+
+def build_model(cfg, num_classes: int) -> nn.Module:
+    """
+    Single place that reads cfg.backbone and constructs the right model.
+    train.py / evaluate.py / gradcam.py should all call this instead of
+    instantiating WTBDefectNet directly, so switching backbones is a
+    one-line config change instead of an edit in three files.
+    """
+    backbone = getattr(cfg, "backbone", "dsps")
+    if backbone == "dsps":
+        return WTBDefectNet(
+            num_classes=num_classes, widths=cfg.widths, tau=cfg.tau, lam=cfg.lam,
+            proto_momentum=cfg.proto_momentum, head_dropout=cfg.head_dropout,
+        )
+    if backbone in ("resnet18", "resnet34"):
+        return WTBDefectNetHybrid(
+            num_classes=num_classes, backbone=backbone,
+            pretrained=getattr(cfg, "pretrained_stem", True),
+            freeze_stem=getattr(cfg, "freeze_stem", True),
+            widths=cfg.widths, tau=cfg.tau, lam=cfg.lam,
+            proto_momentum=cfg.proto_momentum, head_dropout=cfg.head_dropout,
+        )
+    raise ValueError(f"Unknown cfg.backbone: {backbone!r} (expected "
+                      f"'dsps', 'resnet18', or 'resnet34')")

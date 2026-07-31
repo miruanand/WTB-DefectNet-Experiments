@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from wtb.config import Config, CLASS_NAMES, NUM_CLASSES, set_seed, get_device
-from wtb.model import WTBDefectNet
+from wtb.model import build_model
 from wtb.dataset import index_dataset, stratified_split_3way, build_transforms
 from wtb.utils import load_checkpoint
 
@@ -122,7 +122,9 @@ def main():
 
     print(f"[gradcam] Loading checkpoint: {args.checkpoint}")
     ckpt = load_checkpoint(args.checkpoint, map_location=device)
-    model = WTBDefectNet(num_classes=NUM_CLASSES).to(device)
+    cfg = Config(backbone=ckpt.get("backbone") or "dsps")
+    print(f"[gradcam] backbone = {cfg.backbone}")
+    model = build_model(cfg, NUM_CLASSES).to(device)
     model.load_state_dict(ckpt["state_dict"])
     model.eval()   # eval mode -- BN uses running stats; gradients still flow fine for Grad-CAM
 

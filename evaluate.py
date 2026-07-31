@@ -33,7 +33,7 @@ from sklearn.metrics import confusion_matrix, classification_report, roc_curve, 
 from sklearn.preprocessing import label_binarize
 
 from wtb.config import Config, CLASS_NAMES, NUM_CLASSES, set_seed, get_device
-from wtb.model import WTBDefectNet
+from wtb.model import build_model
 from wtb.dataset import build_loaders
 from wtb.utils import compute_metrics, load_checkpoint
 
@@ -151,9 +151,11 @@ def main():
     print(f"[evaluate] Checkpoint is from epoch {ckpt.get('epoch', '?')}, "
           f"best_f1 recorded at save time = {ckpt.get('best_f1', '?')}")
 
-    model = WTBDefectNet(
-        num_classes=NUM_CLASSES, widths=cfg.widths, tau=cfg.tau, lam=cfg.lam
-    ).to(device)
+    # Older checkpoints (exp1, Try_2, Try_4) predate the "backbone" field
+    # and default to "dsps" -- exactly what they were trained with.
+    cfg.backbone = ckpt.get("backbone") or "dsps"
+    print(f"[evaluate] backbone = {cfg.backbone}")
+    model = build_model(cfg, NUM_CLASSES).to(device)
     if cfg.channels_last:
         model = model.to(memory_format=torch.channels_last)
     model.load_state_dict(ckpt["state_dict"])

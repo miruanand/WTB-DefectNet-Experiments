@@ -67,6 +67,53 @@ class Config:
     proto_momentum: float = 0.9        # LTCP EMA prototype-update momentum
     head_dropout: float = 0.15         # dropout on pooled features before LTCP
 
+    # `backbone` picks which class build_model() (wtb/model.py) constructs:
+    #   "dsps"      -> WTBDefectNet, fully custom, trained from scratch
+    #                  (DSPS stem -> Stage1 -> ... -> LTCP, exactly as in
+    #                  Proposed_Architecture.docx). This is what exp1,
+    #                  Try_2, and Try_4 all used -- best result so far is
+    #                  exp1's 65.37% macro-F1, and every doc-alignment
+    #                  edit since then has scored LOWER, not higher.
+    #   "resnet18"/"resnet34" -> WTBDefectNetHybrid: an ImageNet-pretrained
+    #                  ResNet stem+layer1+layer2 (56x56x64 -> 28x28x128)
+    #                  replaces ONLY the generic-feature part of the
+    #                  network (DSPS + Stage1's TSDB/ASA). TSDB, ASA, DRFB,
+    #                  WGFR, MSCA, and LTCP are all still there, at the
+    #                  same doc-specified stage placements, doing the same
+    #                  job on the same 28x28x128 -> 14x14x256 -> 7x7x512
+    #                  pyramid -- nothing about the novel-block story
+    #                  changes. Only the part every from-scratch CNN has to
+    #                  relearn from ~7.5k images (generic edges/textures/
+    #                  colour blobs) is borrowed instead of trained from
+    #                  nothing. Recommended first thing to try: a 9-class
+    #                  classifier trained fully from scratch on ~7.5k
+    #                  images is a genuinely hard data regime, and it's a
+    #                  more likely explanation for exp1/Try_2/Try_4 all
+    #                  landing in the 54-65% macro-F1 band than any single
+    #                  block being "wrong".
+    backbone: str = "dsps"
+    pretrained_stem: bool = True       # only used when backbone != "dsps"
+    freeze_stem: bool = True           # freeze the pretrained conv1/layer1/layer2 for
+                                        # the first run (fewer params to overfit with on
+                                        # ~7.5k images); set False for a second, longer
+                                        # fine-tuning pass once the new head has adapted
+
+    # WTBDefectNet's imbalance handling currently stacks FOUR separate
+    # corrections on top of each other: (1) this WeightedRandomSampler,
+    # (2) class-balanced focal loss weights in CompositeLoss, (3) train-
+    # time logit adjustment baked into LTCP's logits, (4) focal loss's own
+    # easy-example down-weighting. (2)-(4) are exactly what the doc's Gap
+    # G4 / "Composite Loss" column call for, so they stay. But (1) and (3)
+    # work against each other: logit adjustment (Menon et al., 2021) is
+    # derived assuming the model is trained on the NATURAL imbalanced
+    # distribution -- its whole point is to correct for a bias that only
+    # exists if training saw the real class frequencies. Rebalancing the
+    # batches with a sampler removes that bias at the data level, so the
+    # logit-adjustment term is then correcting for an imbalance the model
+    # was never actually trained on. Set to True to restore the old
+    # (stacked) behaviour for comparison.
+    use_weighted_sampler: bool = False
+
     # ---- optimization (from your plan doc, section 5) ----
     batch_size: int = 32
     epochs: int = 120

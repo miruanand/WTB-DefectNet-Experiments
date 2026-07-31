@@ -66,6 +66,17 @@ def parse_args():
     ap.add_argument("--require_gpu", action="store_true",
                      help="Pass through to train.py: hard-stop if no CUDA GPU is found, "
                           "instead of quietly training on CPU for hours.")
+    ap.add_argument("--backbone", type=str, default=None,
+                     choices=["dsps", "resnet18", "resnet34"],
+                     help="Pass through to train.py. 'dsps' (default) = fully custom "
+                          "WTBDefectNet from scratch. 'resnet18'/'resnet34' = ImageNet-"
+                          "pretrained stem + custom TSDB/ASA/DRFB/WGFR/MSCA/LTCP on top.")
+    ap.add_argument("--unfreeze_stem", action="store_true",
+                     help="Pass through to train.py (only relevant with --backbone resnet18/34).")
+    ap.add_argument("--no_pretrained_stem", action="store_true",
+                     help="Pass through to train.py (only relevant with --backbone resnet18/34).")
+    ap.add_argument("--use_weighted_sampler", action="store_true",
+                     help="Pass through to train.py: restore the old always-on sampler.")
     return ap.parse_args()
 
 
@@ -139,6 +150,14 @@ def main():
             train_cmd += ["--epochs", str(args.epochs)]
         if args.require_gpu:
             train_cmd += ["--require_gpu"]
+        if args.backbone is not None:
+            train_cmd += ["--backbone", args.backbone]
+        if args.unfreeze_stem:
+            train_cmd += ["--unfreeze_stem"]
+        if args.no_pretrained_stem:
+            train_cmd += ["--no_pretrained_stem"]
+        if args.use_weighted_sampler:
+            train_cmd += ["--use_weighted_sampler"]
 
         train_ok = False
         for attempt in range(1, args.train_retries + 1):

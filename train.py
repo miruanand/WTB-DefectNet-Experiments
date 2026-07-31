@@ -38,7 +38,7 @@ import torch
 import torch.nn as nn
 
 from wtb.config import Config, CLASS_NAMES, NUM_CLASSES, set_seed, get_device, ensure_out_dir
-from wtb.model import WTBDefectNet
+from wtb.model import build_model
 from wtb.losses import CompositeLoss
 from wtb.dataset import build_loaders
 from wtb.utils import compute_metrics, EarlyStopping, save_checkpoint, load_checkpoint
@@ -54,6 +54,21 @@ def parse_args() -> Config:
     ap.add_argument("--epochs", type=int, default=None)
     ap.add_argument("--batch_size", type=int, default=None)
     ap.add_argument("--num_workers", type=int, default=None)
+    ap.add_argument("--backbone", type=str, default=None,
+                     choices=["dsps", "resnet18", "resnet34"],
+                     help="'dsps' = fully custom WTBDefectNet from scratch. "
+                          "'resnet18'/'resnet34' = ImageNet-pretrained stem, custom "
+                          "TSDB/ASA/DRFB/WGFR/MSCA/LTCP on top. See config.py.")
+    ap.add_argument("--no_pretrained_stem", action="store_true",
+                     help="With --backbone resnet18/34, randomly init the stem "
+                          "instead of loading ImageNet weights (ablation only).")
+    ap.add_argument("--unfreeze_stem", action="store_true",
+                     help="With --backbone resnet18/34, fine-tune the pretrained "
+                          "stem instead of freezing it.")
+    ap.add_argument("--use_weighted_sampler", action="store_true",
+                     help="Restore the old always-on WeightedRandomSampler "
+                          "(stacks with CompositeLoss's own imbalance correction "
+                          "-- see config.py before using this).")
     ap.add_argument("--require_gpu", action="store_true",
                      help="Hard-stop immediately if no CUDA GPU is detected, instead "
                           "of silently training on CPU for hours.")
@@ -64,12 +79,18 @@ def parse_args() -> Config:
     args = ap.parse_args()
 
     cfg = Config()
-    for field in ("data_root", "out_dir", "epochs", "batch_size", "num_workers"):
+    for field in ("data_root", "out_dir", "epochs", "batch_size", "num_workers", "backbone"):
         val = getattr(args, field)
         if val is not None:
             setattr(cfg, field, val)
     if args.out_dir is None and args.exp_name is not None:
         cfg.out_dir = os.path.join(".", "runs", args.exp_name)
+    if args.no_pretrained_stem:
+        cfg.pretrained_stem = False
+    if args.unfreeze_stem:
+        cfg.freeze_stem = False
+    if args.use_weighted_sampler:
+        cfg.use_weighted_sampler = True
     return cfg, args
 
 
@@ -152,12 +173,13 @@ def main():
         num_workers=cfg.num_workers,
         pin_memory=cfg.pin_memory,
         seed=cfg.seed,
+        use_weighted_sampler=cfg.use_weighted_sampler,
     )
 
-    model = WTBDefectNet(
-        num_classes=NUM_CLASSES, widths=cfg.widths, tau=cfg.tau, lam=cfg.lam,
-        proto_momentum=cfg.proto_momentum, head_dropout=cfg.head_dropout,
-    ).to(device)
+    print(f"[train] backbone = {cfg.backbone}"
+          + (f" (pretrained={cfg.pretrained_stem}, freeze_stem={cfg.freeze_stem})"
+             if cfg.backbone != "dsps" else ""))
+    model = build_model(cfg, NUM_CLASSES).to(device)
     if cfg.channels_last:
         model = model.to(memory_format=torch.channels_last)
     model.head.set_prior(train_counts)
@@ -310,14 +332,14 @@ def main():
         save_checkpoint(
             last_path, model, CLASS_NAMES, epoch, early_stopping.best,
             optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-            early_stopping=early_stopping,
+            early_stopping=early_stopping, backbone=cfg.backbone,
         )
         if is_best:
             best_epoch = epoch   # BUGFIX: remember which epoch this actually was
             save_checkpoint(
                 best_path, model, CLASS_NAMES, epoch, early_stopping.best,
                 optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-                early_stopping=early_stopping,
+                early_stopping=early_stopping, backbone=cfg.backbone,
             )
             print(f"           -> new best (val_macro_f1={early_stopping.best:.4f}), saved best.pt")
 
@@ -341,7 +363,7 @@ def main():
     save_checkpoint(
         best_path, model, CLASS_NAMES, best_epoch, early_stopping.best,
         optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-        early_stopping=early_stopping,
+        early_stopping=early_stopping, backbone=cfg.backbone,
     )
     print(f"[train] Training finished. Best val macro-F1 = {early_stopping.best:.4f}")
     print(f"[train] Best weights saved to {best_path}")

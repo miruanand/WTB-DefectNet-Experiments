@@ -174,6 +174,7 @@ def build_loaders(
     num_workers: int = 8,
     pin_memory: bool = True,
     seed: int = 42,
+    use_weighted_sampler: bool = False,
 ) -> Tuple[DataLoader, DataLoader, DataLoader, List[int]]:
     """
     One-call convenience: index -> 60:20:20 stratified split -> transforms -> loaders.
@@ -185,6 +186,14 @@ def build_loaders(
     completely finished, for the number you report in the paper — using it
     more than that turns it into a second validation set and the reported
     numbers stop being trustworthy.
+
+    use_weighted_sampler=False (new default) trains on the natural class
+    distribution and leaves imbalance correction entirely to CompositeLoss
+    (class-balanced focal weights + logit adjustment) and LTCP's EMA
+    prototype bank. See the long comment on Config.use_weighted_sampler in
+    config.py for why stacking this sampler on top of logit-adjusted
+    training is a bug, not an extra safety net. Pass True to restore the
+    old always-on behaviour for a side-by-side comparison run.
     """
     samples = index_dataset(data_root)
     print(f"[dataset] Found {len(samples)} images across {len(CLASS_NAMES)} classes.")
@@ -206,12 +215,24 @@ def build_loaders(
     val_ds = WTBDataset(val_samples, build_transforms(img_size, train=False))
     test_ds = WTBDataset(test_samples, build_transforms(img_size, train=False))
 
-    sampler = make_weighted_sampler([l for _, l in train_samples])
-    train_loader = DataLoader(
-        train_ds, batch_size=batch_size, sampler=sampler,
-        num_workers=num_workers, pin_memory=pin_memory,
-        drop_last=True, persistent_workers=(num_workers > 0),
-    )
+    if use_weighted_sampler:
+        print("[dataset] use_weighted_sampler=True -- rebalancing batches with "
+              "WeightedRandomSampler ON TOP of CompositeLoss's own imbalance "
+              "correction (class-balanced weights + logit adjustment). See "
+              "Config.use_weighted_sampler in config.py before trusting this "
+              "combination's numbers.")
+        sampler = make_weighted_sampler([l for _, l in train_samples])
+        train_loader = DataLoader(
+            train_ds, batch_size=batch_size, sampler=sampler,
+            num_workers=num_workers, pin_memory=pin_memory,
+            drop_last=True, persistent_workers=(num_workers > 0),
+        )
+    else:
+        train_loader = DataLoader(
+            train_ds, batch_size=batch_size, shuffle=True,
+            num_workers=num_workers, pin_memory=pin_memory,
+            drop_last=True, persistent_workers=(num_workers > 0),
+        )
     val_loader = DataLoader(
         val_ds, batch_size=batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=pin_memory,

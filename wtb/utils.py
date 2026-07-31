@@ -93,11 +93,16 @@ def save_checkpoint(
     scheduler=None,
     scaler=None,
     early_stopping: Optional[EarlyStopping] = None,
+    backbone: Optional[str] = None,
 ) -> None:
     """
     Saves a FULL resume-capable checkpoint. `epoch` should be the index of
     the epoch that just finished (0-based) -- on resume, training continues
     from epoch+1.
+
+    `backbone` (e.g. "dsps", "resnet18") is stored so evaluate.py and
+    gradcam.py can call wtb.model.build_model() with the SAME architecture
+    the checkpoint was trained with, instead of assuming WTBDefectNet.
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     state = {
@@ -105,6 +110,7 @@ def save_checkpoint(
         "classes": classes,
         "epoch": epoch,
         "best_f1": best_f1,
+        "backbone": backbone,
     }
     if optimizer is not None:
         state["optimizer"] = optimizer.state_dict()
