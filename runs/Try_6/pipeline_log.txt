@@ -1,0 +1,126 @@
+
+
+########## PIPELINE START 2026-07-31T11:34:08.511101 (exp_name=Try_6) ##########
+
+======================================================================
+[2026-07-31T11:34:08] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_6 --resume --backbone resnet18
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_6
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+[train] backbone = resnet18 (pretrained=True, freeze_stem=True)
+Downloading: "https://download.pytorch.org/models/resnet18-f37072fd.pth" to C:\Users\Admin/.cache\torch\hub\checkpoints\resnet18-f37072fd.pth
+
+  0%|          | 0.00/44.7M [00:00<?, ?B/s]
+  6%|5         | 2.62M/44.7M [00:00<00:01, 27.4MB/s]
+ 17%|#7        | 7.75M/44.7M [00:00<00:00, 42.1MB/s]
+ 29%|##8       | 12.9M/44.7M [00:00<00:00, 47.2MB/s]
+ 45%|####4     | 19.9M/44.7M [00:00<00:00, 57.2MB/s]
+ 57%|#####6    | 25.4M/44.7M [00:00<00:00, 54.1MB/s]
+ 70%|#######   | 31.4M/44.7M [00:00<00:00, 56.8MB/s]
+ 84%|########4 | 37.6M/44.7M [00:00<00:00, 59.2MB/s]
+ 98%|#########7| 43.6M/44.7M [00:00<00:00, 60.1MB/s]
+100%|##########| 44.7M/44.7M [00:00<00:00, 55.4MB/s]
+D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py:197: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(cfg.amp and device.type == "cuda"))
+[resume] --resume given but no checkpoint found at '.\runs\Try_6\checkpoints\last.pt'. Starting fresh from epoch 0.
+[train] 141 optimizer steps/epoch, 120 epochs remaining (of 120 total)
+D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py:287: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scheduler.step()
+  epoch 1/120  step 50/141  loss 1.8440  lr 2.17e-05
+  epoch 1/120  step 100/141  loss 2.1448  lr 4.30e-05
+[epoch 1/120] train_loss 2.4286  train_acc 0.4956  val_loss 1.9400  val_acc 0.5103  val_macro_f1 0.4014  val_balanced_acc 0.4734  (295.8s/epoch)
+           ETA to epoch 120 (if no early stop): 9h46m
+           -> new best (val_macro_f1=0.4014), saved best.pt
+  epoch 2/120  step 50/141  loss 2.0853  lr 8.17e-05
+  epoch 2/120  step 100/141  loss 1.7431  lr 1.03e-04
+[epoch 2/120] train_loss 1.8820  train_acc 0.5935  val_loss 1.8627  val_acc 0.5639  val_macro_f1 0.4789  val_balanced_acc 0.5126  (12.1s/epoch)
+           ETA to epoch 120 (if no early stop): 23m43s
+           -> new best (val_macro_f1=0.4789), saved best.pt
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 375, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 262, in main
+    for step, (imgs, labels) in enumerate(train_loader):
+                                ~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\dataloader.py", line 741, in __next__
+    data = self._next_data()
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\dataloader.py", line 1548, in _next_data
+    return self._process_data(data, worker_id)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\dataloader.py", line 1586, in _process_data
+    data.reraise()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\_utils.py", line 785, in reraise
+    raise exception
+RuntimeError: Caught RuntimeError in DataLoader worker process 1.
+Original Traceback (most recent call last):
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\_utils\worker.py", line 358, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\_utils\fetch.py", line 57, in fetch
+    return self.collate_fn(data)
+           ~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\_utils\collate.py", line 401, in default_collate
+    return collate(batch, collate_fn_map=default_collate_fn_map)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\_utils\collate.py", line 215, in collate
+    collate(samples, collate_fn_map=collate_fn_map)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\_utils\collate.py", line 155, in collate
+    return collate_fn_map[elem_type](batch, collate_fn_map=collate_fn_map)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\utils\data\_utils\collate.py", line 273, in collate_tensor_fn
+    storage = elem._typed_storage()._new_shared(numel, device=elem.device)
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\storage.py", line 1210, in _new_shared
+    untyped_storage = torch.UntypedStorage._new_shared(
+        size * self._element_size(), device=device
+    )
+  File "C:\Users\Admin\anaconda3\Lib\site-packages\torch\storage.py", line 412, in _new_shared
+    return cls._new_using_filename_cpu(size)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+RuntimeError: Couldn't open shared file mapping: <torch_24956_3745186350_72>, error code: <1455>
+
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_6 --resume --backbone resnet18
+
+======================================================================
+[2026-07-31T11:41:05] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_6 --resume --backbone resnet18
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_6
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+[train] backbone = resnet18 (pretrained=True, freeze_stem=True)
+D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py:197: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(cfg.amp and device.type == "cuda"))
+[resume] Loading checkpoint: .\runs\Try_6\checkpoints\last.pt
+[resume] Resuming from epoch 2 (best val macro-F1 so far: 0.4789)
+[train] 141 optimizer steps/epoch, 118 epochs remaining (of 120 total)
+  epoch 3/120  step 50/141  loss 1.1277  lr 1.42e-04
+  epoch 3/120  step 100/141  loss 1.3068  lr 1.63e-04
+LLVM ERROR: out of memory
