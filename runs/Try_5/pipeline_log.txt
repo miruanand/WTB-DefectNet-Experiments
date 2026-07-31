@@ -1,0 +1,70 @@
+
+
+########## PIPELINE START 2026-07-31T10:13:12.288677 (exp_name=Try_5) ##########
+
+======================================================================
+[2026-07-31T10:13:12] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root <path>\WTBs2025 --exp_name Try_5 --resume
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = <path>\WTBs2025
+[train] out_dir   = .\runs\Try_5
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 375, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 167, in main
+    train_loader, val_loader, test_loader, train_counts = build_loaders(
+                                                          ~~~~~~~~~~~~~^
+        data_root=cfg.data_root,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+        use_weighted_sampler=cfg.use_weighted_sampler,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\wtb\dataset.py", line 198, in build_loaders
+    samples = index_dataset(data_root)
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\wtb\dataset.py", line 56, in index_dataset
+    raise FileNotFoundError(
+    ...<4 lines>...
+    )
+FileNotFoundError: Could not find an 'images' folder for these classes under '<path>\WTBs2025': ['oil leakage', 'paint cracks', 'localized damage', 'lightning strikes', 'surface stains', 'erosion', 'coating detachment', 'protective film damage', 'pinholes']. Check --data_root points at the unzipped WTBs2025 folder (the one containing the 9 class subfolders), not the zip file itself.
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root <path>\WTBs2025 --exp_name Try_5 --resume
+
+
+########## PIPELINE START 2026-07-31T10:14:12.974718 (exp_name=Try_5) ##########
+
+======================================================================
+[2026-07-31T10:14:12] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\WTBs2025 --exp_name Try_5 --resume
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\WTBs2025
+[train] out_dir   = .\runs\Try_5
+Traceback (most recent call last):
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 375, in <module>
+    main()
+    ~~~~^^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py", line 167, in main
+    train_loader, val_loader, test_loader, train_counts = build_loaders(
+                                                          ~~~~~~~~~~~~~^
+        data_root=cfg.data_root,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+        use_weighted_sampler=cfg.use_weighted_sampler,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\wtb\dataset.py", line 198, in build_loaders
+    samples = index_dataset(data_root)
+  File "D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\wtb\dataset.py", line 56, in index_dataset
+    raise FileNotFoundError(
+    ...<4 lines>...
+    )
+FileNotFoundError: Could not find an 'images' folder for these classes under 'D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\WTBs2025': ['oil leakage', 'paint cracks', 'localized damage', 'lightning strikes', 'surface stains', 'erosion', 'coating detachment', 'protective film damage', 'pinholes']. Check --data_root points at the unzipped WTBs2025 folder (the one containing the 9 class subfolders), not the zip file itself.
+
+[run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\WTBs2025 --exp_name Try_5 --resume
