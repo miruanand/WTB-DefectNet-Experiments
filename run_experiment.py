@@ -77,6 +77,11 @@ def parse_args():
                      help="Pass through to train.py (only relevant with --backbone resnet18/34).")
     ap.add_argument("--use_weighted_sampler", action="store_true",
                      help="Pass through to train.py: restore the old always-on sampler.")
+    ap.add_argument("--num_workers", type=int, default=None,
+                     help="Pass through to train.py. On Windows, DataLoader workers "
+                          "sharing memory-mapped tensors can crash with 'Couldn't open "
+                          "shared file mapping' or run out of shared memory after a few "
+                          "epochs -- try --num_workers 0 or 2 if you hit that.")
     return ap.parse_args()
 
 
@@ -158,6 +163,8 @@ def main():
             train_cmd += ["--no_pretrained_stem"]
         if args.use_weighted_sampler:
             train_cmd += ["--use_weighted_sampler"]
+        if args.num_workers is not None:
+            train_cmd += ["--num_workers", str(args.num_workers)]
 
         train_ok = False
         for attempt in range(1, args.train_retries + 1):

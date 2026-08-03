@@ -68,3 +68,639 @@ Traceback (most recent call last):
 FileNotFoundError: Could not find an 'images' folder for these classes under 'D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\WTBs2025': ['oil leakage', 'paint cracks', 'localized damage', 'lightning strikes', 'surface stains', 'erosion', 'coating detachment', 'protective film damage', 'pinholes']. Check --data_root points at the unzipped WTBs2025 folder (the one containing the 9 class subfolders), not the zip file itself.
 
 [run_experiment] STEP FAILED (exit code 1): C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\WTBs2025 --exp_name Try_5 --resume
+
+
+########## PIPELINE START 2026-07-31T10:15:49.458455 (exp_name=Try_5) ##########
+
+======================================================================
+[2026-07-31T10:15:49] RUNNING: C:\Users\Admin\anaconda3\python.exe -u train.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --exp_name Try_5 --resume
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[train] data_root = D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+[train] out_dir   = .\runs\Try_5
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+[train] backbone = dsps
+D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py:197: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(cfg.amp and device.type == "cuda"))
+[resume] --resume given but no checkpoint found at '.\runs\Try_5\checkpoints\last.pt'. Starting fresh from epoch 0.
+[train] 141 optimizer steps/epoch, 120 epochs remaining (of 120 total)
+D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\train.py:287: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scheduler.step()
+  epoch 1/120  step 50/141  loss 2.4160  lr 2.17e-05
+  epoch 1/120  step 100/141  loss 3.1084  lr 4.30e-05
+[epoch 1/120] train_loss 2.5613  train_acc 0.4816  val_loss 2.1804  val_acc 0.4188  val_macro_f1 0.3309  val_balanced_acc 0.4031  (208.1s/epoch)
+           ETA to epoch 120 (if no early stop): 6h52m
+           -> new best (val_macro_f1=0.3309), saved best.pt
+  epoch 2/120  step 50/141  loss 2.7064  lr 8.17e-05
+  epoch 2/120  step 100/141  loss 2.7531  lr 1.03e-04
+[epoch 2/120] train_loss 2.1898  train_acc 0.5315  val_loss 2.0997  val_acc 0.4473  val_macro_f1 0.3983  val_balanced_acc 0.4463  (17.2s/epoch)
+           ETA to epoch 120 (if no early stop): 33m52s
+           -> new best (val_macro_f1=0.3983), saved best.pt
+  epoch 3/120  step 50/141  loss 1.6087  lr 1.42e-04
+  epoch 3/120  step 100/141  loss 2.6484  lr 1.63e-04
+[epoch 3/120] train_loss 2.1197  train_acc 0.5366  val_loss 2.1061  val_acc 0.4758  val_macro_f1 0.3877  val_balanced_acc 0.4570  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 32m30s
+  epoch 4/120  step 50/141  loss 1.6918  lr 2.02e-04
+  epoch 4/120  step 100/141  loss 2.0935  lr 2.23e-04
+[epoch 4/120] train_loss 2.0132  train_acc 0.5508  val_loss 1.9889  val_acc 0.5096  val_macro_f1 0.4443  val_balanced_acc 0.4908  (17.3s/epoch)
+           ETA to epoch 120 (if no early stop): 33m28s
+           -> new best (val_macro_f1=0.4443), saved best.pt
+  epoch 5/120  step 50/141  loss 2.0495  lr 2.62e-04
+  epoch 5/120  step 100/141  loss 2.0181  lr 2.83e-04
+[epoch 5/120] train_loss 1.9788  train_acc 0.5590  val_loss 1.9203  val_acc 0.4765  val_macro_f1 0.4391  val_balanced_acc 0.5106  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 31m45s
+  epoch 6/120  step 50/141  loss 1.9867  lr 3.00e-04
+  epoch 6/120  step 100/141  loss 2.3472  lr 3.00e-04
+[epoch 6/120] train_loss 1.9260  train_acc 0.5734  val_loss 1.9302  val_acc 0.4977  val_macro_f1 0.4737  val_balanced_acc 0.5519  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 31m05s
+           -> new best (val_macro_f1=0.4737), saved best.pt
+  epoch 7/120  step 50/141  loss 1.7459  lr 3.00e-04
+  epoch 7/120  step 100/141  loss 1.7876  lr 3.00e-04
+[epoch 7/120] train_loss 1.8274  train_acc 0.5864  val_loss 1.9011  val_acc 0.4573  val_macro_f1 0.4457  val_balanced_acc 0.4999  (17.2s/epoch)
+           ETA to epoch 120 (if no early stop): 32m24s
+  epoch 8/120  step 50/141  loss 1.4519  lr 3.00e-04
+  epoch 8/120  step 100/141  loss 1.9878  lr 3.00e-04
+[epoch 8/120] train_loss 1.7918  train_acc 0.5924  val_loss 1.7527  val_acc 0.5467  val_macro_f1 0.4981  val_balanced_acc 0.5769  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 30m51s
+           -> new best (val_macro_f1=0.4981), saved best.pt
+  epoch 9/120  step 50/141  loss 1.4290  lr 2.99e-04
+  epoch 9/120  step 100/141  loss 1.2598  lr 2.99e-04
+[epoch 9/120] train_loss 1.7524  train_acc 0.6013  val_loss 1.6929  val_acc 0.5639  val_macro_f1 0.5117  val_balanced_acc 0.5614  (17.4s/epoch)
+           ETA to epoch 120 (if no early stop): 32m11s
+           -> new best (val_macro_f1=0.5117), saved best.pt
+  epoch 10/120  step 50/141  loss 2.0707  lr 2.99e-04
+  epoch 10/120  step 100/141  loss 1.3206  lr 2.99e-04
+[epoch 10/120] train_loss 1.7089  train_acc 0.6139  val_loss 1.7892  val_acc 0.5394  val_macro_f1 0.4935  val_balanced_acc 0.5485  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 30m23s
+  epoch 11/120  step 50/141  loss 2.1092  lr 2.98e-04
+  epoch 11/120  step 100/141  loss 2.5545  lr 2.98e-04
+[epoch 11/120] train_loss 1.6960  train_acc 0.6201  val_loss 1.7416  val_acc 0.5699  val_macro_f1 0.5009  val_balanced_acc 0.5577  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 30m17s
+  epoch 12/120  step 50/141  loss 1.9603  lr 2.98e-04
+  epoch 12/120  step 100/141  loss 1.3972  lr 2.97e-04
+[epoch 12/120] train_loss 1.6788  train_acc 0.6266  val_loss 1.7398  val_acc 0.5176  val_macro_f1 0.4927  val_balanced_acc 0.5678  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 29m57s
+  epoch 13/120  step 50/141  loss 1.7454  lr 2.97e-04
+  epoch 13/120  step 100/141  loss 1.5618  lr 2.97e-04
+[epoch 13/120] train_loss 1.6450  train_acc 0.6288  val_loss 1.7319  val_acc 0.5480  val_macro_f1 0.5131  val_balanced_acc 0.5854  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 29m35s
+           -> new best (val_macro_f1=0.5131), saved best.pt
+  epoch 14/120  step 50/141  loss 1.7793  lr 2.96e-04
+  epoch 14/120  step 100/141  loss 1.4882  lr 2.96e-04
+[epoch 14/120] train_loss 1.6357  train_acc 0.6239  val_loss 1.7258  val_acc 0.5480  val_macro_f1 0.5059  val_balanced_acc 0.5873  (16.9s/epoch)
+           ETA to epoch 120 (if no early stop): 29m50s
+  epoch 15/120  step 50/141  loss 1.5218  lr 2.95e-04
+  epoch 15/120  step 100/141  loss 1.5348  lr 2.95e-04
+[epoch 15/120] train_loss 1.6172  train_acc 0.6279  val_loss 1.6764  val_acc 0.5507  val_macro_f1 0.5207  val_balanced_acc 0.5870  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 28m57s
+           -> new best (val_macro_f1=0.5207), saved best.pt
+  epoch 16/120  step 50/141  loss 1.1840  lr 2.94e-04
+  epoch 16/120  step 100/141  loss 2.0112  lr 2.94e-04
+[epoch 16/120] train_loss 1.6231  train_acc 0.6223  val_loss 1.6714  val_acc 0.5262  val_macro_f1 0.4794  val_balanced_acc 0.5703  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 28m48s
+  epoch 17/120  step 50/141  loss 1.2247  lr 2.93e-04
+  epoch 17/120  step 100/141  loss 1.7106  lr 2.92e-04
+[epoch 17/120] train_loss 1.5628  train_acc 0.6383  val_loss 1.7170  val_acc 0.5335  val_macro_f1 0.5017  val_balanced_acc 0.5873  (17.2s/epoch)
+           ETA to epoch 120 (if no early stop): 29m35s
+  epoch 18/120  step 50/141  loss 1.5195  lr 2.92e-04
+  epoch 18/120  step 100/141  loss 1.4505  lr 2.91e-04
+[epoch 18/120] train_loss 1.5374  train_acc 0.6512  val_loss 1.7649  val_acc 0.5348  val_macro_f1 0.5096  val_balanced_acc 0.6102  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 28m09s
+  epoch 19/120  step 50/141  loss 1.1396  lr 2.90e-04
+  epoch 19/120  step 100/141  loss 1.3414  lr 2.90e-04
+[epoch 19/120] train_loss 1.5177  train_acc 0.6514  val_loss 1.6192  val_acc 0.5765  val_macro_f1 0.5279  val_balanced_acc 0.6061  (16.8s/epoch)
+           ETA to epoch 120 (if no early stop): 28m20s
+           -> new best (val_macro_f1=0.5279), saved best.pt
+  epoch 20/120  step 50/141  loss 1.4569  lr 2.89e-04
+  epoch 20/120  step 100/141  loss 0.9125  lr 2.88e-04
+[epoch 20/120] train_loss 1.5495  train_acc 0.6354  val_loss 1.6508  val_acc 0.5686  val_macro_f1 0.5099  val_balanced_acc 0.6026  (17.0s/epoch)
+           ETA to epoch 120 (if no early stop): 28m24s
+  epoch 21/120  step 50/141  loss 1.7255  lr 2.87e-04
+  epoch 21/120  step 100/141  loss 1.1710  lr 2.86e-04
+[epoch 21/120] train_loss 1.5212  train_acc 0.6485  val_loss 1.6366  val_acc 0.6004  val_macro_f1 0.5404  val_balanced_acc 0.6091  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 27m10s
+           -> new best (val_macro_f1=0.5404), saved best.pt
+  epoch 22/120  step 50/141  loss 1.4223  lr 2.85e-04
+  epoch 22/120  step 100/141  loss 1.7539  lr 2.85e-04
+[epoch 22/120] train_loss 1.4992  train_acc 0.6516  val_loss 1.5619  val_acc 0.6156  val_macro_f1 0.5466  val_balanced_acc 0.6022  (17.0s/epoch)
+           ETA to epoch 120 (if no early stop): 27m48s
+           -> new best (val_macro_f1=0.5466), saved best.pt
+  epoch 23/120  step 50/141  loss 1.0363  lr 2.83e-04
+  epoch 23/120  step 100/141  loss 1.4677  lr 2.83e-04
+[epoch 23/120] train_loss 1.4926  train_acc 0.6585  val_loss 1.7339  val_acc 0.5620  val_macro_f1 0.5277  val_balanced_acc 0.6081  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 27m02s
+  epoch 24/120  step 50/141  loss 1.7377  lr 2.82e-04
+  epoch 24/120  step 100/141  loss 2.7818  lr 2.81e-04
+[epoch 24/120] train_loss 1.4826  train_acc 0.6578  val_loss 1.6495  val_acc 0.5388  val_macro_f1 0.5032  val_balanced_acc 0.6053  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 26m38s
+  epoch 25/120  step 50/141  loss 1.5866  lr 2.80e-04
+  epoch 25/120  step 100/141  loss 1.0936  lr 2.79e-04
+[epoch 25/120] train_loss 1.4630  train_acc 0.6636  val_loss 1.6399  val_acc 0.5938  val_macro_f1 0.5528  val_balanced_acc 0.6214  (17.0s/epoch)
+           ETA to epoch 120 (if no early stop): 26m52s
+           -> new best (val_macro_f1=0.5528), saved best.pt
+  epoch 26/120  step 50/141  loss 2.0415  lr 2.77e-04
+  epoch 26/120  step 100/141  loss 1.1144  lr 2.77e-04
+[epoch 26/120] train_loss 1.4611  train_acc 0.6611  val_loss 1.6615  val_acc 0.5514  val_macro_f1 0.5178  val_balanced_acc 0.5778  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 25m57s
+  epoch 27/120  step 50/141  loss 1.1409  lr 2.75e-04
+  epoch 27/120  step 100/141  loss 1.2236  lr 2.74e-04
+[epoch 27/120] train_loss 1.4107  train_acc 0.6733  val_loss 1.5801  val_acc 0.6262  val_macro_f1 0.5635  val_balanced_acc 0.6078  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 25m47s
+           -> new best (val_macro_f1=0.5635), saved best.pt
+  epoch 28/120  step 50/141  loss 1.4016  lr 2.73e-04
+  epoch 28/120  step 100/141  loss 0.9929  lr 2.72e-04
+[epoch 28/120] train_loss 1.4201  train_acc 0.6746  val_loss 1.7159  val_acc 0.5547  val_macro_f1 0.5278  val_balanced_acc 0.6069  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 25m14s
+  epoch 29/120  step 50/141  loss 2.0558  lr 2.70e-04
+  epoch 29/120  step 100/141  loss 1.5831  lr 2.70e-04
+[epoch 29/120] train_loss 1.4219  train_acc 0.6678  val_loss 1.5255  val_acc 0.6004  val_macro_f1 0.5555  val_balanced_acc 0.6243  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 25m22s
+  epoch 30/120  step 50/141  loss 1.2874  lr 2.68e-04
+  epoch 30/120  step 100/141  loss 1.4429  lr 2.67e-04
+[epoch 30/120] train_loss 1.3849  train_acc 0.6753  val_loss 1.5893  val_acc 0.6103  val_macro_f1 0.5794  val_balanced_acc 0.6503  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 24m40s
+           -> new best (val_macro_f1=0.5794), saved best.pt
+  epoch 31/120  step 50/141  loss 1.3376  lr 2.65e-04
+  epoch 31/120  step 100/141  loss 1.9591  lr 2.65e-04
+[epoch 31/120] train_loss 1.3991  train_acc 0.6777  val_loss 1.5908  val_acc 0.6269  val_macro_f1 0.5706  val_balanced_acc 0.6241  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 24m49s
+  epoch 32/120  step 50/141  loss 1.0669  lr 2.63e-04
+  epoch 32/120  step 100/141  loss 1.2199  lr 2.62e-04
+[epoch 32/120] train_loss 1.3832  train_acc 0.6746  val_loss 1.5032  val_acc 0.5997  val_macro_f1 0.5475  val_balanced_acc 0.6147  (17.0s/epoch)
+           ETA to epoch 120 (if no early stop): 24m52s
+  epoch 33/120  step 50/141  loss 1.6243  lr 2.60e-04
+  epoch 33/120  step 100/141  loss 1.5591  lr 2.59e-04
+[epoch 33/120] train_loss 1.3674  train_acc 0.6775  val_loss 1.5814  val_acc 0.5931  val_macro_f1 0.5501  val_balanced_acc 0.6248  (16.8s/epoch)
+           ETA to epoch 120 (if no early stop): 24m18s
+  epoch 34/120  step 50/141  loss 1.2556  lr 2.57e-04
+  epoch 34/120  step 100/141  loss 1.1876  lr 2.56e-04
+[epoch 34/120] train_loss 1.3487  train_acc 0.6822  val_loss 1.5713  val_acc 0.6269  val_macro_f1 0.5816  val_balanced_acc 0.6331  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 23m35s
+           -> new best (val_macro_f1=0.5816), saved best.pt
+  epoch 35/120  step 50/141  loss 1.9283  lr 2.54e-04
+  epoch 35/120  step 100/141  loss 1.3450  lr 2.53e-04
+[epoch 35/120] train_loss 1.4038  train_acc 0.6789  val_loss 1.4860  val_acc 0.6554  val_macro_f1 0.5934  val_balanced_acc 0.6450  (17.2s/epoch)
+           ETA to epoch 120 (if no early stop): 24m23s
+           -> new best (val_macro_f1=0.5934), saved best.pt
+  epoch 36/120  step 50/141  loss 0.9540  lr 2.51e-04
+  epoch 36/120  step 100/141  loss 1.4840  lr 2.50e-04
+[epoch 36/120] train_loss 1.3481  train_acc 0.6771  val_loss 1.5932  val_acc 0.6388  val_macro_f1 0.5684  val_balanced_acc 0.6229  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 23m18s
+  epoch 37/120  step 50/141  loss 1.8670  lr 2.48e-04
+  epoch 37/120  step 100/141  loss 1.5156  lr 2.47e-04
+[epoch 37/120] train_loss 1.3298  train_acc 0.6966  val_loss 1.6097  val_acc 0.5739  val_macro_f1 0.5597  val_balanced_acc 0.6375  (16.8s/epoch)
+           ETA to epoch 120 (if no early stop): 23m16s
+  epoch 38/120  step 50/141  loss 1.2811  lr 2.45e-04
+  epoch 38/120  step 100/141  loss 0.8550  lr 2.44e-04
+[epoch 38/120] train_loss 1.3448  train_acc 0.6758  val_loss 1.6141  val_acc 0.6057  val_macro_f1 0.5706  val_balanced_acc 0.6391  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 23m23s
+  epoch 39/120  step 50/141  loss 1.3100  lr 2.42e-04
+  epoch 39/120  step 100/141  loss 0.8688  lr 2.41e-04
+[epoch 39/120] train_loss 1.3087  train_acc 0.6882  val_loss 1.5428  val_acc 0.6137  val_macro_f1 0.5755  val_balanced_acc 0.6353  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 22m30s
+  epoch 40/120  step 50/141  loss 1.6558  lr 2.39e-04
+  epoch 40/120  step 100/141  loss 1.0368  lr 2.37e-04
+[epoch 40/120] train_loss 1.2868  train_acc 0.6937  val_loss 1.5270  val_acc 0.6607  val_macro_f1 0.6119  val_balanced_acc 0.6597  (17.4s/epoch)
+           ETA to epoch 120 (if no early stop): 23m08s
+           -> new best (val_macro_f1=0.6119), saved best.pt
+  epoch 41/120  step 50/141  loss 1.2046  lr 2.35e-04
+  epoch 41/120  step 100/141  loss 0.8858  lr 2.34e-04
+[epoch 41/120] train_loss 1.2699  train_acc 0.7012  val_loss 1.5059  val_acc 0.6382  val_macro_f1 0.5820  val_balanced_acc 0.6409  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 21m51s
+  epoch 42/120  step 50/141  loss 0.6812  lr 2.32e-04
+  epoch 42/120  step 100/141  loss 1.3467  lr 2.31e-04
+[epoch 42/120] train_loss 1.2926  train_acc 0.6999  val_loss 1.4892  val_acc 0.6587  val_macro_f1 0.5938  val_balanced_acc 0.6407  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 21m37s
+  epoch 43/120  step 50/141  loss 1.5547  lr 2.28e-04
+  epoch 43/120  step 100/141  loss 1.6060  lr 2.27e-04
+[epoch 43/120] train_loss 1.2642  train_acc 0.6970  val_loss 1.6094  val_acc 0.6209  val_macro_f1 0.5800  val_balanced_acc 0.6533  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 21m16s
+  epoch 44/120  step 50/141  loss 1.1416  lr 2.25e-04
+  epoch 44/120  step 100/141  loss 0.9119  lr 2.24e-04
+[epoch 44/120] train_loss 1.2314  train_acc 0.7017  val_loss 1.5695  val_acc 0.6335  val_macro_f1 0.5873  val_balanced_acc 0.6431  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 21m02s
+  epoch 45/120  step 50/141  loss 1.4200  lr 2.21e-04
+  epoch 45/120  step 100/141  loss 1.2096  lr 2.20e-04
+[epoch 45/120] train_loss 1.2367  train_acc 0.6917  val_loss 1.6469  val_acc 0.5792  val_macro_f1 0.5590  val_balanced_acc 0.6424  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 20m32s
+  epoch 46/120  step 50/141  loss 1.3334  lr 2.18e-04
+  epoch 46/120  step 100/141  loss 1.8638  lr 2.16e-04
+[epoch 46/120] train_loss 1.2368  train_acc 0.7046  val_loss 1.6082  val_acc 0.6011  val_macro_f1 0.5614  val_balanced_acc 0.6247  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 20m34s
+  epoch 47/120  step 50/141  loss 1.1210  lr 2.14e-04
+  epoch 47/120  step 100/141  loss 1.1430  lr 2.13e-04
+[epoch 47/120] train_loss 1.2283  train_acc 0.7088  val_loss 1.5530  val_acc 0.6315  val_macro_f1 0.5926  val_balanced_acc 0.6539  (16.8s/epoch)
+           ETA to epoch 120 (if no early stop): 20m24s
+  epoch 48/120  step 50/141  loss 1.2450  lr 2.10e-04
+  epoch 48/120  step 100/141  loss 0.9786  lr 2.09e-04
+[epoch 48/120] train_loss 1.1870  train_acc 0.7241  val_loss 1.4322  val_acc 0.6766  val_macro_f1 0.6154  val_balanced_acc 0.6660  (17.3s/epoch)
+           ETA to epoch 120 (if no early stop): 20m44s
+           -> new best (val_macro_f1=0.6154), saved best.pt
+  epoch 49/120  step 50/141  loss 0.8453  lr 2.07e-04
+  epoch 49/120  step 100/141  loss 1.5999  lr 2.05e-04
+[epoch 49/120] train_loss 1.2127  train_acc 0.7156  val_loss 1.5437  val_acc 0.6388  val_macro_f1 0.5999  val_balanced_acc 0.6698  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 19m32s
+  epoch 50/120  step 50/141  loss 1.0057  lr 2.03e-04
+  epoch 50/120  step 100/141  loss 1.0731  lr 2.01e-04
+[epoch 50/120] train_loss 1.1563  train_acc 0.7134  val_loss 1.5436  val_acc 0.6335  val_macro_f1 0.5764  val_balanced_acc 0.6193  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 19m55s
+  epoch 51/120  step 50/141  loss 1.1384  lr 1.99e-04
+  epoch 51/120  step 100/141  loss 1.0662  lr 1.97e-04
+[epoch 51/120] train_loss 1.1788  train_acc 0.7168  val_loss 1.5081  val_acc 0.6660  val_macro_f1 0.6115  val_balanced_acc 0.6663  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 19m00s
+  epoch 52/120  step 50/141  loss 1.0641  lr 1.95e-04
+  epoch 52/120  step 100/141  loss 2.5940  lr 1.94e-04
+[epoch 52/120] train_loss 1.1511  train_acc 0.7225  val_loss 1.5545  val_acc 0.6428  val_macro_f1 0.6051  val_balanced_acc 0.6711  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 18m35s
+  epoch 53/120  step 50/141  loss 1.5236  lr 1.91e-04
+  epoch 53/120  step 100/141  loss 1.1701  lr 1.90e-04
+[epoch 53/120] train_loss 1.1623  train_acc 0.7298  val_loss 1.4555  val_acc 0.6441  val_macro_f1 0.6042  val_balanced_acc 0.6627  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 19m04s
+  epoch 54/120  step 50/141  loss 1.0250  lr 1.87e-04
+  epoch 54/120  step 100/141  loss 1.4997  lr 1.86e-04
+[epoch 54/120] train_loss 1.1317  train_acc 0.7205  val_loss 1.4863  val_acc 0.6587  val_macro_f1 0.6159  val_balanced_acc 0.6607  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 18m17s
+           -> new best (val_macro_f1=0.6159), saved best.pt
+  epoch 55/120  step 50/141  loss 0.9650  lr 1.83e-04
+  epoch 55/120  step 100/141  loss 1.3008  lr 1.82e-04
+[epoch 55/120] train_loss 1.1583  train_acc 0.7143  val_loss 1.5621  val_acc 0.6342  val_macro_f1 0.5987  val_balanced_acc 0.6595  (17.4s/epoch)
+           ETA to epoch 120 (if no early stop): 18m49s
+  epoch 56/120  step 50/141  loss 1.3698  lr 1.79e-04
+  epoch 56/120  step 100/141  loss 1.0749  lr 1.78e-04
+[epoch 56/120] train_loss 1.1351  train_acc 0.7225  val_loss 1.4598  val_acc 0.6574  val_macro_f1 0.6330  val_balanced_acc 0.6817  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 17m45s
+           -> new best (val_macro_f1=0.6330), saved best.pt
+  epoch 57/120  step 50/141  loss 0.9821  lr 1.75e-04
+  epoch 57/120  step 100/141  loss 0.6711  lr 1.74e-04
+[epoch 57/120] train_loss 1.0866  train_acc 0.7369  val_loss 1.5921  val_acc 0.6176  val_macro_f1 0.6084  val_balanced_acc 0.6700  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 17m17s
+  epoch 58/120  step 50/141  loss 1.1212  lr 1.71e-04
+  epoch 58/120  step 100/141  loss 1.5708  lr 1.70e-04
+[epoch 58/120] train_loss 1.0861  train_acc 0.7416  val_loss 1.4799  val_acc 0.6673  val_macro_f1 0.6166  val_balanced_acc 0.6708  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 17m10s
+  epoch 59/120  step 50/141  loss 1.2701  lr 1.67e-04
+  epoch 59/120  step 100/141  loss 1.1087  lr 1.66e-04
+[epoch 59/120] train_loss 1.0826  train_acc 0.7391  val_loss 1.5255  val_acc 0.6614  val_macro_f1 0.6206  val_balanced_acc 0.6774  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 16m53s
+  epoch 60/120  step 50/141  loss 1.9337  lr 1.63e-04
+  epoch 60/120  step 100/141  loss 1.3114  lr 1.61e-04
+[epoch 60/120] train_loss 1.0662  train_acc 0.7378  val_loss 1.3820  val_acc 0.6706  val_macro_f1 0.6129  val_balanced_acc 0.6618  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 16m40s
+  epoch 61/120  step 50/141  loss 1.0837  lr 1.59e-04
+  epoch 61/120  step 100/141  loss 0.9150  lr 1.57e-04
+[epoch 61/120] train_loss 1.0681  train_acc 0.7400  val_loss 1.4737  val_acc 0.6561  val_macro_f1 0.6090  val_balanced_acc 0.6730  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 16m14s
+  epoch 62/120  step 50/141  loss 0.9062  lr 1.55e-04
+  epoch 62/120  step 100/141  loss 1.9349  lr 1.53e-04
+[epoch 62/120] train_loss 1.0684  train_acc 0.7356  val_loss 1.4634  val_acc 0.6534  val_macro_f1 0.6143  val_balanced_acc 0.6751  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 15m53s
+  epoch 63/120  step 50/141  loss 1.2468  lr 1.51e-04
+  epoch 63/120  step 100/141  loss 0.8732  lr 1.49e-04
+[epoch 63/120] train_loss 1.0590  train_acc 0.7343  val_loss 1.4868  val_acc 0.6607  val_macro_f1 0.6072  val_balanced_acc 0.6602  (17.0s/epoch)
+           ETA to epoch 120 (if no early stop): 16m08s
+  epoch 64/120  step 50/141  loss 0.7088  lr 1.46e-04
+  epoch 64/120  step 100/141  loss 0.6087  lr 1.45e-04
+[epoch 64/120] train_loss 1.0550  train_acc 0.7449  val_loss 1.4410  val_acc 0.6673  val_macro_f1 0.6186  val_balanced_acc 0.6668  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 15m24s
+  epoch 65/120  step 50/141  loss 0.9153  lr 1.42e-04
+  epoch 65/120  step 100/141  loss 0.6192  lr 1.41e-04
+[epoch 65/120] train_loss 1.0423  train_acc 0.7456  val_loss 1.4552  val_acc 0.6667  val_macro_f1 0.6180  val_balanced_acc 0.6820  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 15m39s
+  epoch 66/120  step 50/141  loss 0.6455  lr 1.38e-04
+  epoch 66/120  step 100/141  loss 1.0732  lr 1.37e-04
+[epoch 66/120] train_loss 1.0116  train_acc 0.7511  val_loss 1.5546  val_acc 0.6382  val_macro_f1 0.6000  val_balanced_acc 0.6637  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 14m51s
+  epoch 67/120  step 50/141  loss 1.2195  lr 1.34e-04
+  epoch 67/120  step 100/141  loss 1.0244  lr 1.33e-04
+[epoch 67/120] train_loss 1.0275  train_acc 0.7516  val_loss 1.5551  val_acc 0.6421  val_macro_f1 0.6088  val_balanced_acc 0.6648  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 14m34s
+  epoch 68/120  step 50/141  loss 0.4859  lr 1.30e-04
+  epoch 68/120  step 100/141  loss 1.2363  lr 1.29e-04
+[epoch 68/120] train_loss 0.9962  train_acc 0.7504  val_loss 1.4781  val_acc 0.6759  val_macro_f1 0.6243  val_balanced_acc 0.6768  (17.3s/epoch)
+           ETA to epoch 120 (if no early stop): 15m00s
+  epoch 69/120  step 50/141  loss 0.7108  lr 1.26e-04
+  epoch 69/120  step 100/141  loss 2.1176  lr 1.25e-04
+[epoch 69/120] train_loss 0.9840  train_acc 0.7522  val_loss 1.4580  val_acc 0.6700  val_macro_f1 0.6223  val_balanced_acc 0.6739  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 13m58s
+  epoch 70/120  step 50/141  loss 0.6133  lr 1.22e-04
+  epoch 70/120  step 100/141  loss 1.4118  lr 1.21e-04
+[epoch 70/120] train_loss 0.9715  train_acc 0.7646  val_loss 1.5340  val_acc 0.6667  val_macro_f1 0.6152  val_balanced_acc 0.6597  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 14m15s
+  epoch 71/120  step 50/141  loss 0.8245  lr 1.18e-04
+  epoch 71/120  step 100/141  loss 1.2190  lr 1.17e-04
+[epoch 71/120] train_loss 0.9854  train_acc 0.7593  val_loss 1.5165  val_acc 0.6647  val_macro_f1 0.6171  val_balanced_acc 0.6619  (16.8s/epoch)
+           ETA to epoch 120 (if no early stop): 13m41s
+  epoch 72/120  step 50/141  loss 0.5818  lr 1.14e-04
+  epoch 72/120  step 100/141  loss 1.3722  lr 1.13e-04
+[epoch 72/120] train_loss 0.9513  train_acc 0.7609  val_loss 1.5723  val_acc 0.6713  val_macro_f1 0.6331  val_balanced_acc 0.6856  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 13m18s
+           -> new best (val_macro_f1=0.6331), saved best.pt
+  epoch 73/120  step 50/141  loss 0.6710  lr 1.10e-04
+  epoch 73/120  step 100/141  loss 0.8100  lr 1.09e-04
+[epoch 73/120] train_loss 0.9543  train_acc 0.7633  val_loss 1.4821  val_acc 0.6859  val_macro_f1 0.6320  val_balanced_acc 0.6687  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 12m56s
+  epoch 74/120  step 50/141  loss 0.8529  lr 1.06e-04
+  epoch 74/120  step 100/141  loss 1.1078  lr 1.05e-04
+[epoch 74/120] train_loss 0.9457  train_acc 0.7626  val_loss 1.5179  val_acc 0.6653  val_macro_f1 0.6188  val_balanced_acc 0.6707  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 12m43s
+  epoch 75/120  step 50/141  loss 1.6153  lr 1.02e-04
+  epoch 75/120  step 100/141  loss 0.7316  lr 1.01e-04
+[epoch 75/120] train_loss 0.9474  train_acc 0.7653  val_loss 1.4658  val_acc 0.6852  val_macro_f1 0.6285  val_balanced_acc 0.6745  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 12m22s
+  epoch 76/120  step 50/141  loss 0.6229  lr 9.84e-05
+  epoch 76/120  step 100/141  loss 0.9340  lr 9.70e-05
+[epoch 76/120] train_loss 0.9034  train_acc 0.7640  val_loss 1.5615  val_acc 0.6415  val_macro_f1 0.6100  val_balanced_acc 0.6551  (16.7s/epoch)
+           ETA to epoch 120 (if no early stop): 12m13s
+  epoch 77/120  step 50/141  loss 0.7729  lr 9.46e-05
+  epoch 77/120  step 100/141  loss 0.8958  lr 9.32e-05
+[epoch 77/120] train_loss 0.9233  train_acc 0.7682  val_loss 1.5398  val_acc 0.6733  val_macro_f1 0.6157  val_balanced_acc 0.6643  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 11m51s
+  epoch 78/120  step 50/141  loss 0.7055  lr 9.08e-05
+  epoch 78/120  step 100/141  loss 1.0222  lr 8.95e-05
+[epoch 78/120] train_loss 0.9213  train_acc 0.7657  val_loss 1.5303  val_acc 0.6759  val_macro_f1 0.6209  val_balanced_acc 0.6594  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 11m59s
+  epoch 79/120  step 50/141  loss 0.8728  lr 8.70e-05
+  epoch 79/120  step 100/141  loss 0.6516  lr 8.57e-05
+[epoch 79/120] train_loss 0.9290  train_acc 0.7668  val_loss 1.5121  val_acc 0.6759  val_macro_f1 0.6220  val_balanced_acc 0.6635  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 11m16s
+  epoch 80/120  step 50/141  loss 1.2004  lr 8.33e-05
+  epoch 80/120  step 100/141  loss 0.7581  lr 8.21e-05
+[epoch 80/120] train_loss 0.8769  train_acc 0.7733  val_loss 1.5615  val_acc 0.7011  val_macro_f1 0.6413  val_balanced_acc 0.6805  (17.4s/epoch)
+           ETA to epoch 120 (if no early stop): 11m36s
+           -> new best (val_macro_f1=0.6413), saved best.pt
+  epoch 81/120  step 50/141  loss 1.0155  lr 7.97e-05
+  epoch 81/120  step 100/141  loss 1.1175  lr 7.84e-05
+[epoch 81/120] train_loss 0.8843  train_acc 0.7781  val_loss 1.4860  val_acc 0.6991  val_macro_f1 0.6376  val_balanced_acc 0.6744  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 10m37s
+  epoch 82/120  step 50/141  loss 1.1479  lr 7.61e-05
+  epoch 82/120  step 100/141  loss 1.2407  lr 7.48e-05
+[epoch 82/120] train_loss 0.8552  train_acc 0.7797  val_loss 1.5875  val_acc 0.6773  val_macro_f1 0.6319  val_balanced_acc 0.6753  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 10m30s
+  epoch 83/120  step 50/141  loss 0.9018  lr 7.26e-05
+  epoch 83/120  step 100/141  loss 0.5212  lr 7.13e-05
+[epoch 83/120] train_loss 0.8967  train_acc 0.7781  val_loss 1.6112  val_acc 0.6653  val_macro_f1 0.6093  val_balanced_acc 0.6675  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 10m34s
+  epoch 84/120  step 50/141  loss 0.8463  lr 6.91e-05
+  epoch 84/120  step 100/141  loss 0.6096  lr 6.79e-05
+[epoch 84/120] train_loss 0.8849  train_acc 0.7742  val_loss 1.5499  val_acc 0.6773  val_macro_f1 0.6298  val_balanced_acc 0.6760  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 9m53s
+  epoch 85/120  step 50/141  loss 0.6775  lr 6.57e-05
+  epoch 85/120  step 100/141  loss 0.8454  lr 6.45e-05
+[epoch 85/120] train_loss 0.8469  train_acc 0.7766  val_loss 1.5365  val_acc 0.6713  val_macro_f1 0.6248  val_balanced_acc 0.6645  (17.0s/epoch)
+           ETA to epoch 120 (if no early stop): 9m53s
+  epoch 86/120  step 50/141  loss 1.0937  lr 6.23e-05
+  epoch 86/120  step 100/141  loss 0.6697  lr 6.11e-05
+[epoch 86/120] train_loss 0.8574  train_acc 0.7861  val_loss 1.5226  val_acc 0.6826  val_macro_f1 0.6319  val_balanced_acc 0.6663  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 9m23s
+  epoch 87/120  step 50/141  loss 0.9131  lr 5.90e-05
+  epoch 87/120  step 100/141  loss 1.0399  lr 5.79e-05
+[epoch 87/120] train_loss 0.8525  train_acc 0.7819  val_loss 1.5817  val_acc 0.6660  val_macro_f1 0.6203  val_balanced_acc 0.6611  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 9m06s
+  epoch 88/120  step 50/141  loss 0.5710  lr 5.58e-05
+  epoch 88/120  step 100/141  loss 0.6351  lr 5.47e-05
+[epoch 88/120] train_loss 0.8248  train_acc 0.7926  val_loss 1.6495  val_acc 0.6547  val_macro_f1 0.6093  val_balanced_acc 0.6563  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 8m43s
+  epoch 89/120  step 50/141  loss 0.6375  lr 5.26e-05
+  epoch 89/120  step 100/141  loss 0.9284  lr 5.15e-05
+[epoch 89/120] train_loss 0.8464  train_acc 0.7868  val_loss 1.5478  val_acc 0.6720  val_macro_f1 0.6123  val_balanced_acc 0.6581  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 8m33s
+  epoch 90/120  step 50/141  loss 0.5586  lr 4.96e-05
+  epoch 90/120  step 100/141  loss 0.6396  lr 4.85e-05
+[epoch 90/120] train_loss 0.8229  train_acc 0.7799  val_loss 1.6520  val_acc 0.6740  val_macro_f1 0.6249  val_balanced_acc 0.6683  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 8m10s
+  epoch 91/120  step 50/141  loss 1.0861  lr 4.66e-05
+  epoch 91/120  step 100/141  loss 1.3043  lr 4.55e-05
+[epoch 91/120] train_loss 0.8136  train_acc 0.7965  val_loss 1.5818  val_acc 0.6865  val_macro_f1 0.6347  val_balanced_acc 0.6689  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 8m01s
+  epoch 92/120  step 50/141  loss 1.1807  lr 4.36e-05
+  epoch 92/120  step 100/141  loss 0.6528  lr 4.26e-05
+[epoch 92/120] train_loss 0.8130  train_acc 0.7839  val_loss 1.5492  val_acc 0.6653  val_macro_f1 0.6167  val_balanced_acc 0.6584  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 7m40s
+  epoch 93/120  step 50/141  loss 0.9586  lr 4.08e-05
+  epoch 93/120  step 100/141  loss 0.9747  lr 3.98e-05
+[epoch 93/120] train_loss 0.7646  train_acc 0.8032  val_loss 1.6361  val_acc 0.6726  val_macro_f1 0.6313  val_balanced_acc 0.6800  (17.2s/epoch)
+           ETA to epoch 120 (if no early stop): 7m43s
+  epoch 94/120  step 50/141  loss 0.7885  lr 3.80e-05
+  epoch 94/120  step 100/141  loss 0.6275  lr 3.71e-05
+[epoch 94/120] train_loss 0.7882  train_acc 0.8014  val_loss 1.6117  val_acc 0.6846  val_macro_f1 0.6298  val_balanced_acc 0.6641  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 7m08s
+  epoch 95/120  step 50/141  loss 0.6946  lr 3.53e-05
+  epoch 95/120  step 100/141  loss 1.0727  lr 3.44e-05
+[epoch 95/120] train_loss 0.8114  train_acc 0.7899  val_loss 1.6238  val_acc 0.6832  val_macro_f1 0.6267  val_balanced_acc 0.6619  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 7m07s
+  epoch 96/120  step 50/141  loss 1.3076  lr 3.27e-05
+  epoch 96/120  step 100/141  loss 0.8557  lr 3.18e-05
+[epoch 96/120] train_loss 0.8130  train_acc 0.7906  val_loss 1.6394  val_acc 0.6899  val_macro_f1 0.6288  val_balanced_acc 0.6668  (16.3s/epoch)
+           ETA to epoch 120 (if no early stop): 6m32s
+  epoch 97/120  step 50/141  loss 0.6084  lr 3.02e-05
+  epoch 97/120  step 100/141  loss 0.5986  lr 2.94e-05
+[epoch 97/120] train_loss 0.7445  train_acc 0.8092  val_loss 1.6220  val_acc 0.6879  val_macro_f1 0.6300  val_balanced_acc 0.6660  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 6m18s
+  epoch 98/120  step 50/141  loss 1.1391  lr 2.78e-05
+  epoch 98/120  step 100/141  loss 0.7267  lr 2.70e-05
+[epoch 98/120] train_loss 0.7754  train_acc 0.8005  val_loss 1.5743  val_acc 0.6746  val_macro_f1 0.6220  val_balanced_acc 0.6701  (17.0s/epoch)
+           ETA to epoch 120 (if no early stop): 6m13s
+  epoch 99/120  step 50/141  loss 0.6868  lr 2.55e-05
+  epoch 99/120  step 100/141  loss 0.5830  lr 2.47e-05
+[epoch 99/120] train_loss 0.7914  train_acc 0.8043  val_loss 1.6196  val_acc 0.6846  val_macro_f1 0.6303  val_balanced_acc 0.6664  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 5m45s
+  epoch 100/120  step 50/141  loss 1.0158  lr 2.32e-05
+  epoch 100/120  step 100/141  loss 0.9225  lr 2.25e-05
+[epoch 100/120] train_loss 0.7979  train_acc 0.7974  val_loss 1.6333  val_acc 0.6786  val_macro_f1 0.6245  val_balanced_acc 0.6635  (17.2s/epoch)
+           ETA to epoch 120 (if no early stop): 5m43s
+  epoch 101/120  step 50/141  loss 0.8783  lr 2.11e-05
+  epoch 101/120  step 100/141  loss 1.0475  lr 2.04e-05
+[epoch 101/120] train_loss 0.7732  train_acc 0.7981  val_loss 1.5945  val_acc 0.6832  val_macro_f1 0.6271  val_balanced_acc 0.6608  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 5m12s
+  epoch 102/120  step 50/141  loss 0.4423  lr 1.90e-05
+  epoch 102/120  step 100/141  loss 1.1603  lr 1.83e-05
+[epoch 102/120] train_loss 0.7826  train_acc 0.8019  val_loss 1.6269  val_acc 0.6865  val_macro_f1 0.6370  val_balanced_acc 0.6721  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 4m58s
+  epoch 103/120  step 50/141  loss 0.6637  lr 1.71e-05
+  epoch 103/120  step 100/141  loss 0.5784  lr 1.64e-05
+[epoch 103/120] train_loss 0.7530  train_acc 0.8067  val_loss 1.6403  val_acc 0.6839  val_macro_f1 0.6344  val_balanced_acc 0.6748  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 4m39s
+  epoch 104/120  step 50/141  loss 0.7407  lr 1.52e-05
+  epoch 104/120  step 100/141  loss 0.8166  lr 1.46e-05
+[epoch 104/120] train_loss 0.7295  train_acc 0.8041  val_loss 1.5931  val_acc 0.6912  val_macro_f1 0.6344  val_balanced_acc 0.6669  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 4m24s
+  epoch 105/120  step 50/141  loss 0.9467  lr 1.35e-05
+  epoch 105/120  step 100/141  loss 0.7714  lr 1.29e-05
+[epoch 105/120] train_loss 0.7491  train_acc 0.8043  val_loss 1.5917  val_acc 0.6918  val_macro_f1 0.6384  val_balanced_acc 0.6710  (16.6s/epoch)
+           ETA to epoch 120 (if no early stop): 4m09s
+  epoch 106/120  step 50/141  loss 0.4764  lr 1.18e-05
+  epoch 106/120  step 100/141  loss 0.2507  lr 1.13e-05
+[epoch 106/120] train_loss 0.7174  train_acc 0.8103  val_loss 1.6451  val_acc 0.6799  val_macro_f1 0.6280  val_balanced_acc 0.6630  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 3m49s
+  epoch 107/120  step 50/141  loss 0.7774  lr 1.03e-05
+  epoch 107/120  step 100/141  loss 0.6366  lr 9.78e-06
+[epoch 107/120] train_loss 0.7423  train_acc 0.8200  val_loss 1.6700  val_acc 0.6832  val_macro_f1 0.6293  val_balanced_acc 0.6647  (16.3s/epoch)
+           ETA to epoch 120 (if no early stop): 3m32s
+  epoch 108/120  step 50/141  loss 0.7511  lr 8.86e-06
+  epoch 108/120  step 100/141  loss 1.6588  lr 8.38e-06
+[epoch 108/120] train_loss 0.7272  train_acc 0.8083  val_loss 1.6164  val_acc 0.6879  val_macro_f1 0.6400  val_balanced_acc 0.6776  (17.1s/epoch)
+           ETA to epoch 120 (if no early stop): 3m24s
+  epoch 109/120  step 50/141  loss 0.9770  lr 7.53e-06
+  epoch 109/120  step 100/141  loss 0.8204  lr 7.08e-06
+[epoch 109/120] train_loss 0.7636  train_acc 0.8052  val_loss 1.6587  val_acc 0.6892  val_macro_f1 0.6363  val_balanced_acc 0.6681  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 2m59s
+  epoch 110/120  step 50/141  loss 0.5893  lr 6.30e-06
+  epoch 110/120  step 100/141  loss 0.6378  lr 5.89e-06
+[epoch 110/120] train_loss 0.7394  train_acc 0.8070  val_loss 1.6440  val_acc 0.6773  val_macro_f1 0.6241  val_balanced_acc 0.6610  (17.4s/epoch)
+           ETA to epoch 120 (if no early stop): 2m53s
+  epoch 111/120  step 50/141  loss 0.9396  lr 5.18e-06
+  epoch 111/120  step 100/141  loss 0.5359  lr 4.81e-06
+[epoch 111/120] train_loss 0.7318  train_acc 0.8070  val_loss 1.6648  val_acc 0.6687  val_macro_f1 0.6146  val_balanced_acc 0.6504  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 2m27s
+  epoch 112/120  step 50/141  loss 0.8598  lr 4.16e-06
+  epoch 112/120  step 100/141  loss 0.7810  lr 3.83e-06
+[epoch 112/120] train_loss 0.7544  train_acc 0.8025  val_loss 1.6768  val_acc 0.6826  val_macro_f1 0.6281  val_balanced_acc 0.6593  (16.5s/epoch)
+           ETA to epoch 120 (if no early stop): 2m12s
+  epoch 113/120  step 50/141  loss 0.3606  lr 3.26e-06
+  epoch 113/120  step 100/141  loss 0.5224  lr 2.97e-06
+[epoch 113/120] train_loss 0.7386  train_acc 0.8047  val_loss 1.5982  val_acc 0.6846  val_macro_f1 0.6335  val_balanced_acc 0.6696  (17.3s/epoch)
+           ETA to epoch 120 (if no early stop): 2m00s
+  epoch 114/120  step 50/141  loss 0.7377  lr 2.46e-06
+  epoch 114/120  step 100/141  loss 0.6252  lr 2.21e-06
+[epoch 114/120] train_loss 0.7214  train_acc 0.8127  val_loss 1.6493  val_acc 0.6865  val_macro_f1 0.6365  val_balanced_acc 0.6648  (16.4s/epoch)
+           ETA to epoch 120 (if no early stop): 1m38s
+  epoch 115/120  step 50/141  loss 1.1209  lr 1.78e-06
+  epoch 115/120  step 100/141  loss 0.4116  lr 1.56e-06
+[epoch 115/120] train_loss 0.7440  train_acc 0.8096  val_loss 1.6173  val_acc 0.6819  val_macro_f1 0.6251  val_balanced_acc 0.6622  (17.2s/epoch)
+           ETA to epoch 120 (if no early stop): 1m26s
+[train] Early stopping: no val macro-F1 improvement for 35 epochs. Best = 0.6413.
+[train] Training finished. Best val macro-F1 = 0.6413
+[train] Best weights saved to .\runs\Try_5\checkpoints\best.pt
+[train] Next: python evaluate.py --data_root <...> --checkpoint .\runs\Try_5\checkpoints\best.pt --out_dir .\runs\Try_5
+
+======================================================================
+[2026-07-31T10:51:37] RUNNING: C:\Users\Admin\anaconda3\python.exe -u evaluate.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --checkpoint D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\checkpoints\best.pt --out_dir D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[evaluate] Rebuilding the same 60:20:20 split (seed=42) used during training -- only the test_loader below will be used.
+[dataset] Found 7544 images across 9 classes.
+    oil leakage             :   520
+    paint cracks            :   447
+    localized damage        :  1027
+    lightning strikes       :   285
+    surface stains          :   263
+    erosion                 :  2799
+    coating detachment      :  1085
+    protective film damage  :   549
+    pinholes                :   569
+[dataset] Split -> train 4526 | val 1509 | test 1509 (60:20:20)
+[evaluate] Loading checkpoint: D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\checkpoints\best.pt
+[evaluate] Checkpoint is from epoch 79, best_f1 recorded at save time = 0.6413485404559846
+[evaluate] backbone = dsps
+[evaluate] Running inference on the TEST set (1509 images) -- this is a ONE-TIME touch.
+
+=== TEST SET RESULTS ===
+  accuracy        : 0.7263
+  macro precision : 0.6591
+  macro recall    : 0.7009
+  macro F1        : 0.6620
+  balanced acc    : 0.7009
+  cohen's kappa   : 0.6633
+  MCC             : 0.6671
+
+  per-class F1:
+    oil leakage             : 1.0000
+    paint cracks            : 0.4393
+    localized damage        : 0.4150
+    lightning strikes       : 0.8661
+    surface stains          : 0.3333
+    erosion                 : 0.8909
+    coating detachment      : 0.6980
+    protective film damage  : 0.7126
+    pinholes                : 0.6024
+
+[evaluate] Saved:
+    D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\eval\test_metrics.json
+    D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\eval\classification_report.txt
+    D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\eval\confusion_matrix.png
+    D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\eval\roc_curves.png
+
+[evaluate] Next: python gradcam.py --data_root <...> --checkpoint D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\checkpoints\best.pt --out_dir D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5
+
+======================================================================
+[2026-07-31T10:53:07] RUNNING: C:\Users\Admin\anaconda3\python.exe -u plot_curves.py --run_dir D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5
+======================================================================
+============================================================
+Plots generated successfully!
+Saved in: D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\Curves
+============================================================
+
+======================================================================
+[2026-07-31T10:53:11] RUNNING: C:\Users\Admin\anaconda3\python.exe -u gradcam.py --data_root D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025 --checkpoint D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\checkpoints\best.pt --out_dir D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5 --num_per_class 2
+======================================================================
+============================================================
+[config] DEVICE = GPU  (NVIDIA RTX 4500 Ada Generation, 24.0 GB VRAM)
+============================================================
+[gradcam] Indexing dataset and rebuilding the same split (seed=42)...
+[gradcam] Loading checkpoint: D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\checkpoints\best.pt
+[gradcam] backbone = dsps
+[gradcam] Saved 18 individual figures + grid.png to D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\Try_5\gradcam
+
+======================================================================
+[2026-07-31T10:53:43] RUNNING: git add runs\Try_5
+======================================================================
+
+======================================================================
+[2026-07-31T10:53:43] RUNNING: git commit -m Add Try_5 results (auto-committed by run_experiment.py)
+======================================================================
+[main 65809b0] Add Try_5 results (auto-committed by run_experiment.py)
+ 34 files changed, 247 insertions(+)
+ create mode 100644 runs/Try_5/Curves/combined_accuracy_curve.png
+ create mode 100644 runs/Try_5/Curves/combined_loss_curve.png
+ create mode 100644 runs/Try_5/Curves/combined_validation_metrics.png
+ create mode 100644 runs/Try_5/Curves/train_accuracy.png
+ create mode 100644 runs/Try_5/Curves/train_loss.png
+ create mode 100644 runs/Try_5/Curves/val_accuracy.png
+ create mode 100644 runs/Try_5/Curves/val_balanced_accuracy.png
+ create mode 100644 runs/Try_5/Curves/val_loss.png
+ create mode 100644 runs/Try_5/Curves/val_macro_f1.png
+ create mode 100644 runs/Try_5/eval/classification_report.txt
+ create mode 100644 runs/Try_5/eval/confusion_matrix.png
+ create mode 100644 runs/Try_5/eval/roc_curves.png
+ create mode 100644 runs/Try_5/eval/test_metrics.json
+ create mode 100644 runs/Try_5/gradcam/coating_detachment_0.png
+ create mode 100644 runs/Try_5/gradcam/coating_detachment_1.png
+ create mode 100644 runs/Try_5/gradcam/erosion_0.png
+ create mode 100644 runs/Try_5/gradcam/erosion_1.png
+ create mode 100644 runs/Try_5/gradcam/grid.png
+ create mode 100644 runs/Try_5/gradcam/lightning_strikes_0.png
+ create mode 100644 runs/Try_5/gradcam/lightning_strikes_1.png
+ create mode 100644 runs/Try_5/gradcam/localized_damage_0.png
+ create mode 100644 runs/Try_5/gradcam/localized_damage_1.png
+ create mode 100644 runs/Try_5/gradcam/oil_leakage_0.png
+ create mode 100644 runs/Try_5/gradcam/oil_leakage_1.png
+ create mode 100644 runs/Try_5/gradcam/paint_cracks_0.png
+ create mode 100644 runs/Try_5/gradcam/paint_cracks_1.png
+ create mode 100644 runs/Try_5/gradcam/pinholes_0.png
+ create mode 100644 runs/Try_5/gradcam/pinholes_1.png
+ create mode 100644 runs/Try_5/gradcam/protective_film_damage_0.png
+ create mode 100644 runs/Try_5/gradcam/protective_film_damage_1.png
+ create mode 100644 runs/Try_5/gradcam/surface_stains_0.png
+ create mode 100644 runs/Try_5/gradcam/surface_stains_1.png
+ create mode 100644 runs/Try_5/log.csv
+ create mode 100644 runs/Try_5/pipeline_log.txt
+
+======================================================================
+[2026-07-31T10:53:44] RUNNING: git push origin
+======================================================================
+To https://github.com/miruanand/WTB-DefectNet-Experiments.git
+   74371e9..65809b0  main -> main
