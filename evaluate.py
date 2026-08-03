@@ -50,20 +50,50 @@ def parse_args():
     ap.add_argument("--seed", type=int, default=42,
                      help="MUST match the seed train.py used, or you will "
                           "reconstruct a different split and leak test data.")
+    ap.add_argument("--tta", action="store_true",
+                     help="Test-time augmentation: average softmax probabilities over "
+                          "the original image, horizontal flip, vertical flip, and both "
+                          "flips combined (4-way). Free accuracy, no retraining -- costs "
+                          "4x inference time. Consistent with training augmentation, "
+                          "which already uses both flips (UAV shots have no fixed 'up').")
+    ap.add_argument("--use_ema", action="store_true",
+                     help="Load the model-EMA shadow weights from the checkpoint "
+                          "(if present) instead of the raw weights. Falls back to raw "
+                          "weights with a warning if the checkpoint has no EMA weights "
+                          "(e.g. trained before model-EMA was added, or with "
+                          "use_model_ema=False).")
     return ap.parse_args()
 
 
 @torch.no_grad()
-def run_inference(model, loader, device, channels_last: bool):
+def run_inference(model, loader, device, channels_last: bool, tta: bool = False):
+    """
+    tta=True averages softmax probabilities over 4 views per image:
+    original, horizontal flip, vertical flip, and both flips combined.
+    Purely an inference-time change -- the model and its weights are
+    untouched; this just runs forward() more than once per image.
+    """
     model.eval()
     y_true, y_pred, y_prob = [], [], []
     for imgs, labels in loader:
         imgs = imgs.to(device, non_blocking=True)
         if channels_last:
             imgs = imgs.to(memory_format=torch.channels_last)
-        logits, _ = model(imgs)
-        probs = torch.softmax(logits, dim=1)
-        y_pred.extend(logits.argmax(dim=1).cpu().tolist())
+
+        if tta:
+            views = [imgs, torch.flip(imgs, dims=[3]), torch.flip(imgs, dims=[2]),
+                      torch.flip(imgs, dims=[2, 3])]
+            probs = None
+            for v in views:
+                logits, _ = model(v)
+                p = torch.softmax(logits, dim=1)
+                probs = p if probs is None else probs + p
+            probs = probs / len(views)
+        else:
+            logits, _ = model(imgs)
+            probs = torch.softmax(logits, dim=1)
+
+        y_pred.extend(probs.argmax(dim=1).cpu().tolist())
         y_prob.extend(probs.cpu().tolist())
         y_true.extend(labels.tolist())
     return y_true, y_pred, np.array(y_prob)
@@ -158,12 +188,26 @@ def main():
     model = build_model(cfg, NUM_CLASSES).to(device)
     if cfg.channels_last:
         model = model.to(memory_format=torch.channels_last)
-    model.load_state_dict(ckpt["state_dict"])
+
+    used_ema = False
+    if args.use_ema and ckpt.get("ema_state_dict") is not None:
+        model.load_state_dict(ckpt["ema_state_dict"])
+        used_ema = True
+        print("[evaluate] --use_ema: loaded model-EMA shadow weights.")
+    else:
+        if args.use_ema:
+            print("[evaluate] --use_ema requested but this checkpoint has no EMA "
+                  "weights (trained before model-EMA was added, or use_model_ema=False) "
+                  "-- falling back to raw weights.")
+        model.load_state_dict(ckpt["state_dict"])
     model.head.set_prior(train_counts)   # harmless at eval time (LTCP only applies it in train mode)
 
+    if args.tta:
+        print("[evaluate] --tta: averaging softmax over original + h-flip + v-flip + "
+              "both-flips (4-way) for every test image.")
     print(f"[evaluate] Running inference on the TEST set "
           f"({len(test_loader.dataset)} images) -- this is a ONE-TIME touch.")
-    y_true, y_pred, y_prob = run_inference(model, test_loader, device, cfg.channels_last)
+    y_true, y_pred, y_prob = run_inference(model, test_loader, device, cfg.channels_last, tta=args.tta)
 
     metrics = compute_metrics(y_true, y_pred, NUM_CLASSES)
     cm = confusion_matrix(y_true, y_pred, labels=list(range(NUM_CLASSES)))
@@ -197,6 +241,8 @@ def main():
             "checkpoint_epoch": ckpt.get("epoch"),
             "n_test_images": len(test_loader.dataset),
             "class_names": classes,
+            "used_ema_weights": used_ema,
+            "tta": bool(args.tta),
             **metrics,
         }, f, indent=2)
 

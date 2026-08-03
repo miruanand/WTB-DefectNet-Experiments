@@ -35,11 +35,13 @@ def class_balanced_weights(counts: List[int], beta: float = 0.999) -> torch.Tens
 
 class CompositeLoss(nn.Module):
     def __init__(self, class_counts: List[int], gamma: float = 2.0,
-                 beta_la: float = 1.0, beta_pc: float = 0.1, cb_beta: float = 0.999):
+                 beta_la: float = 1.0, beta_pc: float = 0.1, cb_beta: float = 0.999,
+                 label_smoothing: float = 0.0):
         super().__init__()
         self.gamma = gamma
         self.beta_la = beta_la
         self.beta_pc = beta_pc
+        self.label_smoothing = label_smoothing
         self.register_buffer("cb_w", class_balanced_weights(class_counts, cb_beta))
 
     def forward(self, logits: torch.Tensor, feat: torch.Tensor,
@@ -56,7 +58,10 @@ class CompositeLoss(nn.Module):
         # ---- logit-adjusted CE ----
         # `logits` already has +lam*log_prior baked in during training (see
         # LTCP.forward), so plain CE here IS the logit-adjusted CE term.
-        l_la = F.cross_entropy(logits, target)
+        # label_smoothing=0.0 (the old default) makes this byte-for-byte the
+        # same computation as before -- it's an additive option, not a
+        # replacement of the logit-adjustment mechanism itself.
+        l_la = F.cross_entropy(logits, target, label_smoothing=self.label_smoothing)
 
         # ---- prototype / center loss ----
         p_y = F.normalize(prototypes[target], dim=1)

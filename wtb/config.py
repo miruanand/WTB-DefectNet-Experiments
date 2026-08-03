@@ -114,6 +114,37 @@ class Config:
     # (stacked) behaviour for comparison.
     use_weighted_sampler: bool = False
 
+    # ---- accuracy-push additions (training procedure only -- NONE of these
+    # touch DSPS/TSDB/ASA/DRFB/WGFR/MSCA/LTCP or the doc's block placements
+    # in wtb/model.py; they only change how the same architecture is
+    # trained/evaluated) ----
+
+    # MixUp / CutMix: applied on a random subset of batches (mixup_cutmix_prob)
+    # to the IMAGES only. Helps the texture-heavy, low-support classes
+    # (surface stains n=263, paint cracks n=447, localized damage n=1027)
+    # generalize better instead of memorizing the ~150-300 train images
+    # each one actually has after the 60:20:20 split. When both are True,
+    # each mixed batch randomly picks one (50/50) rather than applying both.
+    use_mixup: bool = True
+    mixup_alpha: float = 0.2            # Beta(alpha,alpha) mixing coefficient
+    use_cutmix: bool = True
+    cutmix_alpha: float = 1.0
+    mixup_cutmix_prob: float = 0.5      # fraction of batches that get mixed at all
+
+    # Label smoothing on the logit-adjusted CE term inside CompositeLoss
+    # (wtb/losses.py). 0.0 = disabled = identical to before this change.
+    label_smoothing: float = 0.05
+
+    # Model weight EMA (NOT the same as LTCP's own prototype EMA -- this
+    # tracks a shadow copy of the WHOLE model's weights, updated every
+    # optimizer step). Cheap, near-guaranteed small val-F1 bump, standard
+    # practice (timm/EfficientNet-style). Tracked as a SEPARATE checkpoint
+    # (checkpoints/best_ema.pt) alongside the normal best.pt so you can
+    # compare both and keep whichever scores higher on your one-time test
+    # evaluation -- it does not replace or change how best.pt is selected.
+    use_model_ema: bool = True
+    model_ema_decay: float = 0.999
+
     # ---- optimization (from your plan doc, section 5) ----
     batch_size: int = 32
     epochs: int = 120

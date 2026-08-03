@@ -41,7 +41,10 @@ from wtb.config import Config, CLASS_NAMES, NUM_CLASSES, set_seed, get_device, e
 from wtb.model import build_model
 from wtb.losses import CompositeLoss
 from wtb.dataset import build_loaders
-from wtb.utils import compute_metrics, EarlyStopping, save_checkpoint, load_checkpoint
+from wtb.utils import (
+    compute_metrics, EarlyStopping, save_checkpoint, load_checkpoint,
+    apply_mixup_cutmix, ModelEMA,
+)
 
 
 def parse_args() -> Config:
@@ -54,6 +57,28 @@ def parse_args() -> Config:
     ap.add_argument("--epochs", type=int, default=None)
     ap.add_argument("--batch_size", type=int, default=None)
     ap.add_argument("--num_workers", type=int, default=None)
+    ap.add_argument("--base_lr", type=float, default=None,
+                     help="Override Config.base_lr. Mainly for phase-2 fine-tuning: "
+                          "use a lower LR (e.g. 3e-5) than the phase-1 default (3e-4) "
+                          "when unfreezing a previously-frozen pretrained stem.")
+    ap.add_argument("--init_from", type=str, default=None,
+                     help="Load ONLY model weights (state_dict) from this checkpoint, "
+                          "then start a FRESH run (new optimizer/scheduler/early-stopping, "
+                          "epoch 0) -- mutually exclusive with --resume. This is for "
+                          "phase-2 stem fine-tuning: train once with the pretrained stem "
+                          "frozen (the default), then run again with "
+                          "`--backbone resnet18 --unfreeze_stem --init_from "
+                          "runs/<phase1>/checkpoints/best.pt --base_lr 3e-5 "
+                          "--exp_name <phase1>_phase2`. Does not change wtb/model.py or "
+                          "any block in it -- only which checkpoint the weights start from "
+                          "and which stem layers are frozen.")
+    ap.add_argument("--no_mixup_cutmix", action="store_true",
+                     help="Disable MixUp/CutMix for this run (falls back to the plain "
+                          "augmentation pipeline in wtb/dataset.py).")
+    ap.add_argument("--no_model_ema", action="store_true",
+                     help="Disable model-weight EMA (checkpoints/best_ema.pt) for this run.")
+    ap.add_argument("--label_smoothing", type=float, default=None,
+                     help="Override Config.label_smoothing.")
     ap.add_argument("--backbone", type=str, default=None,
                      choices=["dsps", "resnet18", "resnet34"],
                      help="'dsps' = fully custom WTBDefectNet from scratch. "
@@ -78,8 +103,17 @@ def parse_args() -> Config:
                      help="Resume from a specific checkpoint file instead of last.pt.")
     args = ap.parse_args()
 
+    if args.resume and args.init_from:
+        raise SystemExit(
+            "[train] --resume and --init_from are mutually exclusive: --resume "
+            "continues an interrupted run with its OLD optimizer/scheduler/early-"
+            "stopping state; --init_from starts a brand-new run from just the "
+            "weights of a (usually different) checkpoint. Pick one."
+        )
+
     cfg = Config()
-    for field in ("data_root", "out_dir", "epochs", "batch_size", "num_workers", "backbone"):
+    for field in ("data_root", "out_dir", "epochs", "batch_size", "num_workers",
+                  "backbone", "base_lr"):
         val = getattr(args, field)
         if val is not None:
             setattr(cfg, field, val)
@@ -91,6 +125,13 @@ def parse_args() -> Config:
         cfg.freeze_stem = False
     if args.use_weighted_sampler:
         cfg.use_weighted_sampler = True
+    if args.no_mixup_cutmix:
+        cfg.use_mixup = False
+        cfg.use_cutmix = False
+    if args.no_model_ema:
+        cfg.use_model_ema = False
+    if args.label_smoothing is not None:
+        cfg.label_smoothing = args.label_smoothing
     return cfg, args
 
 
@@ -184,9 +225,21 @@ def main():
         model = model.to(memory_format=torch.channels_last)
     model.head.set_prior(train_counts)
 
+    if args.init_from:
+        print(f"[train] --init_from: loading model weights ONLY from "
+              f"{args.init_from} (no optimizer/scheduler/early-stopping state -- "
+              f"this is a fresh run starting at epoch 0).")
+        init_ckpt = load_checkpoint(args.init_from, map_location=device)
+        missing, unexpected = model.load_state_dict(init_ckpt["state_dict"], strict=False)
+        if missing or unexpected:
+            print(f"[train] --init_from: {len(missing)} missing / "
+                  f"{len(unexpected)} unexpected key(s) vs the current model "
+                  f"(expected if --backbone/--unfreeze_stem differ from the "
+                  f"source checkpoint's config).")
+
     criterion = CompositeLoss(
         train_counts, gamma=cfg.focal_gamma, beta_la=cfg.beta_la,
-        beta_pc=cfg.beta_pc, cb_beta=cfg.cb_beta,
+        beta_pc=cfg.beta_pc, cb_beta=cfg.cb_beta, label_smoothing=cfg.label_smoothing,
     ).to(device)
 
     optimizer = torch.optim.AdamW(
@@ -202,6 +255,7 @@ def main():
 
     # ---------------- resume ----------------
     resume_from = args.resume_path or (last_path if args.resume else None)
+    ckpt = None
     if resume_from and os.path.isfile(resume_from):
         print(f"[resume] Loading checkpoint: {resume_from}")
         ckpt = load_checkpoint(resume_from, map_location=device)
@@ -221,6 +275,24 @@ def main():
     elif args.resume or args.resume_path:
         print(f"[resume] --resume given but no checkpoint found at "
               f"'{resume_from}'. Starting fresh from epoch 0.")
+
+    # ---------------- model-weight EMA (see wtb/utils.py ModelEMA) ----------------
+    # Built AFTER --init_from/--resume have already set the model's starting
+    # weights, so the shadow copy starts from the right place. On resume, if
+    # the checkpoint carries its own ema_state_dict, that's restored instead
+    # of re-deriving the shadow from the (possibly already-drifted) raw weights.
+    ema = None
+    best_ema_path = os.path.join(ckpt_dir, "best_ema.pt")
+    ema_best = -float("inf")
+    if cfg.use_model_ema:
+        ema = ModelEMA(model, decay=cfg.model_ema_decay)
+        if ckpt is not None and ckpt.get("ema_state_dict") is not None:
+            ema.load_state_dict(ckpt["ema_state_dict"])
+            print("[resume] Restored model-EMA shadow weights from checkpoint.")
+        else:
+            print(f"[train] Model EMA enabled (decay={cfg.model_ema_decay}); "
+                  f"shadow weights initialized from the current model state. "
+                  f"Tracked separately in {best_ema_path}.")
 
     # write CSV header only if starting a brand-new log
     write_header = not os.path.isfile(log_path)
@@ -271,9 +343,22 @@ def main():
                 imgs = imgs.to(memory_format=torch.channels_last)
             labels = labels.to(device, non_blocking=True)
 
+            # MixUp/CutMix (image-level only; wtb/model.py is untouched).
+            # `mixed=False` on most batches (mixup_cutmix_prob<1) makes
+            # labels_a=labels_b=labels, lam=1.0 -- identical to no mixing.
+            imgs, labels_a, labels_b, lam, mixed = apply_mixup_cutmix(
+                imgs, labels, cfg.mixup_alpha, cfg.cutmix_alpha,
+                cfg.mixup_cutmix_prob, cfg.use_mixup, cfg.use_cutmix,
+            )
+
             with torch.autocast(device_type=device.type, enabled=(cfg.amp and device.type == "cuda")):
                 logits, feat = model(imgs)
-                loss, parts = criterion(logits, feat, model.head.prototypes, labels)
+                if mixed:
+                    loss_a, parts = criterion(logits, feat, model.head.prototypes, labels_a)
+                    loss_b, _ = criterion(logits, feat, model.head.prototypes, labels_b)
+                    loss = lam * loss_a + (1.0 - lam) * loss_b
+                else:
+                    loss, parts = criterion(logits, feat, model.head.prototypes, labels_a)
                 loss_scaled = loss / cfg.grad_accum_steps
 
             scaler.scale(loss_scaled).backward()
@@ -286,11 +371,18 @@ def main():
                 optimizer.zero_grad(set_to_none=True)
                 scheduler.step()
                 global_step += 1
+                if ema is not None:
+                    ema.update(model)
 
             # EMA-update the LTCP prototype memory bank from this batch's
             # features (after the optimizer step, so it tracks the current
             # feature space). Classes absent from this batch are untouched.
-            model.head.update_prototypes(feat.detach(), labels)
+            # Skipped on mixed (MixUp/CutMix) steps: those features don't
+            # cleanly belong to one class, and feeding blended features into
+            # the prototype bank would inject noise into exactly the
+            # rare-class stability mechanism LTCP exists for.
+            if not mixed:
+                model.head.update_prototypes(feat.detach(), labels_a)
 
             running_loss += loss.item() * imgs.size(0)
             running_correct += (logits.argmax(dim=1) == labels).sum().item()
@@ -304,6 +396,9 @@ def main():
         train_loss = running_loss / max(1, n_seen)
         train_acc = running_correct / max(1, n_seen)
         val_metrics = run_validation(model, val_loader, criterion, device, cfg.channels_last)
+        val_metrics_ema = None
+        if ema is not None:
+            val_metrics_ema = run_validation(ema.module, val_loader, criterion, device, cfg.channels_last)
         epoch_seconds = time.time() - epoch_start
         lr_now = optimizer.param_groups[0]["lr"]
 
@@ -313,6 +408,10 @@ def main():
               f"val_macro_f1 {val_metrics['macro_f1']:.4f}  "
               f"val_balanced_acc {val_metrics['balanced_acc']:.4f}  "
               f"({epoch_seconds:.1f}s/epoch)")
+        if val_metrics_ema is not None:
+            print(f"           [EMA]  val_loss {val_metrics_ema['loss']:.4f}  "
+                  f"val_acc {val_metrics_ema['accuracy']:.4f}  "
+                  f"val_macro_f1 {val_metrics_ema['macro_f1']:.4f}")
 
         remaining = cfg.epochs - (epoch + 1)
         eta = format_eta(remaining * epoch_seconds)
@@ -329,10 +428,13 @@ def main():
         should_stop = early_stopping.step(val_metrics["macro_f1"], model)
         is_best = early_stopping.since == 0   # step() just improved best
 
+        ema_state = ema.state_dict() if ema is not None else None
+
         save_checkpoint(
             last_path, model, CLASS_NAMES, epoch, early_stopping.best,
             optimizer=optimizer, scheduler=scheduler, scaler=scaler,
             early_stopping=early_stopping, backbone=cfg.backbone,
+            ema_state_dict=ema_state,
         )
         if is_best:
             best_epoch = epoch   # BUGFIX: remember which epoch this actually was
@@ -340,8 +442,22 @@ def main():
                 best_path, model, CLASS_NAMES, epoch, early_stopping.best,
                 optimizer=optimizer, scheduler=scheduler, scaler=scaler,
                 early_stopping=early_stopping, backbone=cfg.backbone,
+                ema_state_dict=ema_state,
             )
             print(f"           -> new best (val_macro_f1={early_stopping.best:.4f}), saved best.pt")
+
+        # best_ema.pt is selected independently, by the EMA model's OWN val
+        # macro-F1 -- this never affects early stopping or which epoch
+        # best.pt/last.pt point to; it's purely an extra artifact so you can
+        # compare "raw best" vs "EMA best" at evaluate.py time and keep
+        # whichever scores higher on the one-time test run.
+        if val_metrics_ema is not None and val_metrics_ema["macro_f1"] > ema_best:
+            ema_best = val_metrics_ema["macro_f1"]
+            save_checkpoint(
+                best_ema_path, ema.module, CLASS_NAMES, epoch, ema_best,
+                backbone=cfg.backbone,
+            )
+            print(f"           -> new best EMA (val_macro_f1={ema_best:.4f}), saved best_ema.pt")
 
         if interrupted["flag"]:
             # Interrupt landed during validation/checkpointing rather than
@@ -364,9 +480,14 @@ def main():
         best_path, model, CLASS_NAMES, best_epoch, early_stopping.best,
         optimizer=optimizer, scheduler=scheduler, scaler=scaler,
         early_stopping=early_stopping, backbone=cfg.backbone,
+        ema_state_dict=(ema.state_dict() if ema is not None else None),
     )
     print(f"[train] Training finished. Best val macro-F1 = {early_stopping.best:.4f}")
     print(f"[train] Best weights saved to {best_path}")
+    if ema is not None:
+        print(f"[train] Best EMA weights (val_macro_f1={ema_best:.4f}) saved to {best_ema_path}")
+        print("[train] Evaluate BOTH on the test set (evaluate.py --use_ema for the "
+              "EMA one) and keep whichever scores higher -- neither is assumed better.")
     print("[train] Next: python evaluate.py --data_root <...> --checkpoint "
           f"{best_path} --out_dir {cfg.out_dir}")
 

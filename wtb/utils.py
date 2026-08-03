@@ -12,10 +12,13 @@ loss) and re-running with --resume continues from the exact epoch it left
 off on, not from epoch 0.
 """
 
+import copy
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
+import torch.nn as nn
 from sklearn.metrics import (
     precision_score, recall_score, f1_score, balanced_accuracy_score,
     cohen_kappa_score, matthews_corrcoef, accuracy_score,
@@ -83,6 +86,98 @@ class EarlyStopping:
         self.best_state = state["best_state"]
 
 
+# ======================================================================
+# MixUp / CutMix -- image-level augmentation, applied in train.py before
+# the forward pass. Neither touches wtb/model.py; they operate purely on
+# the input tensor and the label bookkeeping around it.
+# ======================================================================
+def mixup_data(x: torch.Tensor, y: torch.Tensor, alpha: float = 0.2):
+    """Beta(alpha,alpha)-weighted linear blend of two shuffled copies of
+    the batch. Returns (mixed_x, y_a, y_b, lam) -- the loss should be
+    computed as lam*criterion(out, y_a) + (1-lam)*criterion(out, y_b)."""
+    lam = float(np.random.beta(alpha, alpha)) if alpha > 0 else 1.0
+    index = torch.randperm(x.size(0), device=x.device)
+    mixed_x = lam * x + (1.0 - lam) * x[index]
+    return mixed_x, y, y[index], lam
+
+
+def cutmix_data(x: torch.Tensor, y: torch.Tensor, alpha: float = 1.0):
+    """Pastes a random rectangular patch from a shuffled copy of the batch
+    into each image; lam is corrected to the ACTUAL pasted-area fraction
+    (not the sampled one) since the patch is clipped to image bounds."""
+    lam = float(np.random.beta(alpha, alpha)) if alpha > 0 else 1.0
+    index = torch.randperm(x.size(0), device=x.device)
+    y_a, y_b = y, y[index]
+
+    H, W = x.size(2), x.size(3)
+    cut_rat = float(np.sqrt(max(1.0 - lam, 0.0)))
+    cut_h, cut_w = int(H * cut_rat), int(W * cut_rat)
+    cy, cx = np.random.randint(H), np.random.randint(W)
+    y1, y2 = int(np.clip(cy - cut_h // 2, 0, H)), int(np.clip(cy + cut_h // 2, 0, H))
+    x1, x2 = int(np.clip(cx - cut_w // 2, 0, W)), int(np.clip(cx + cut_w // 2, 0, W))
+
+    x[:, :, y1:y2, x1:x2] = x[index][:, :, y1:y2, x1:x2]
+    lam = 1.0 - ((x2 - x1) * (y2 - y1) / float(H * W))
+    return x, y_a, y_b, lam
+
+
+def apply_mixup_cutmix(
+    x: torch.Tensor, y: torch.Tensor,
+    mixup_alpha: float, cutmix_alpha: float, prob: float,
+    use_mixup: bool, use_cutmix: bool,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float, bool]:
+    """
+    With probability `prob`, mixes this batch (picking MixUp or CutMix
+    50/50 when both are enabled); otherwise returns it unchanged.
+    Returns (x, y_a, y_b, lam, mixed) -- when mixed=False, y_a is y and
+    y_b is y and lam=1.0, so `lam*crit(out,y_a) + (1-lam)*crit(out,y_b)`
+    is always the correct loss whether or not mixing happened.
+    """
+    if (not use_mixup and not use_cutmix) or np.random.rand() > prob:
+        return x, y, y, 1.0, False
+    do_cutmix = use_cutmix if not (use_mixup and use_cutmix) else (np.random.rand() < 0.5)
+    if do_cutmix:
+        x, y_a, y_b, lam = cutmix_data(x, y, cutmix_alpha)
+    else:
+        x, y_a, y_b, lam = mixup_data(x, y, mixup_alpha)
+    return x, y_a, y_b, lam, True
+
+
+# ======================================================================
+# Model weight EMA -- a shadow copy of the ENTIRE model (all params +
+# buffers), decayed toward the live training weights every optimizer
+# step. This is separate from LTCP's own prototype EMA (wtb/model.py) --
+# that one smooths the classifier's class prototypes; this one smooths
+# every weight in the network, DSPS/TSDB/ASA/DRFB/WGFR/MSCA/LTCP included,
+# without changing what any of those blocks compute.
+# ======================================================================
+class ModelEMA:
+    def __init__(self, model: nn.Module, decay: float = 0.999):
+        self.decay = decay
+        self.module = copy.deepcopy(model)
+        self.module.eval()
+        for p in self.module.parameters():
+            p.requires_grad_(False)
+
+    @torch.no_grad()
+    def update(self, model: nn.Module) -> None:
+        msd = model.state_dict()
+        for k, v in self.module.state_dict().items():
+            new_val = msd[k].detach()
+            if v.dtype.is_floating_point:
+                v.mul_(self.decay).add_(new_val, alpha=1.0 - self.decay)
+            else:
+                # non-float buffers (e.g. LTCP's `initialized` bool mask) --
+                # EMA is meaningless for these, just track the live value.
+                v.copy_(new_val)
+
+    def state_dict(self) -> Dict:
+        return self.module.state_dict()
+
+    def load_state_dict(self, state: Dict) -> None:
+        self.module.load_state_dict(state)
+
+
 def save_checkpoint(
     path: str,
     model: torch.nn.Module,
@@ -94,6 +189,7 @@ def save_checkpoint(
     scaler=None,
     early_stopping: Optional[EarlyStopping] = None,
     backbone: Optional[str] = None,
+    ema_state_dict: Optional[Dict] = None,
 ) -> None:
     """
     Saves a FULL resume-capable checkpoint. `epoch` should be the index of
@@ -103,6 +199,14 @@ def save_checkpoint(
     `backbone` (e.g. "dsps", "resnet18") is stored so evaluate.py and
     gradcam.py can call wtb.model.build_model() with the SAME architecture
     the checkpoint was trained with, instead of assuming WTBDefectNet.
+
+    `ema_state_dict`, if given, stores the model-weight-EMA shadow weights
+    (see ModelEMA above) alongside the raw weights, so a resumed run can
+    restore the EMA shadow exactly and evaluate.py can optionally load the
+    EMA weights instead of the raw ones (--use_ema). Older checkpoints
+    (saved before this was added) simply won't have this key -- everything
+    that reads it uses .get(...) with a fallback, so old checkpoints still
+    load fine.
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     state = {
@@ -112,6 +216,8 @@ def save_checkpoint(
         "best_f1": best_f1,
         "backbone": backbone,
     }
+    if ema_state_dict is not None:
+        state["ema_state_dict"] = ema_state_dict
     if optimizer is not None:
         state["optimizer"] = optimizer.state_dict()
     if scheduler is not None:
