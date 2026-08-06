@@ -54,7 +54,7 @@ class Config:
     out_dir: str = "./runs/exp1"       # checkpoints, logs, plots go here
 
     # ---- data ----
-    img_size: int = 224
+    img_size: int = 384
     val_fraction: float = 0.2          # 60:20:20 train:val:test split
     test_fraction: float = 0.2         # touched exactly once, after training is done
     num_workers: int = 8               # set to os.cpu_count() // 2 as a sane default
@@ -146,7 +146,7 @@ class Config:
     model_ema_decay: float = 0.999
 
     # ---- optimization (from your plan doc, section 5) ----
-    batch_size: int = 32
+    batch_size: int = 16
     epochs: int = 120
     base_lr: float = 3e-4
     weight_decay: float = 0.05
