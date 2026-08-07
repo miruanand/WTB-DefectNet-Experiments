@@ -304,12 +304,14 @@ def main():
         should_stop = early_stopping.step(val_metrics["macro_f1"], model)
         if early_stopping.since == 0:
             best_epoch = epoch
-            save_checkpoint(best_path, model, CASCADE_CLASSES, epoch, early_stopping.best, backbone=cfg.backbone)
+            save_checkpoint(best_path, model, CASCADE_CLASSES, epoch, early_stopping.best,
+                             backbone=cfg.backbone, img_size=cfg.img_size)
             print(f"           -> new best (val_macro_f1={early_stopping.best:.4f}), saved best.pt")
 
         if ema and val_metrics_ema["macro_f1"] > ema_best:
             ema_best = val_metrics_ema["macro_f1"]
-            save_checkpoint(best_ema_path, ema.module, CASCADE_CLASSES, epoch, ema_best, backbone=cfg.backbone)
+            save_checkpoint(best_ema_path, ema.module, CASCADE_CLASSES, epoch, ema_best,
+                             backbone=cfg.backbone, img_size=cfg.img_size)
             print(f"           -> new best EMA (val_macro_f1={ema_best:.4f}), saved best_ema.pt")
 
         if should_stop:
@@ -318,7 +320,8 @@ def main():
 
     log_file.close()
     early_stopping.restore_best(model)
-    save_checkpoint(best_path, model, CASCADE_CLASSES, best_epoch, early_stopping.best, backbone=cfg.backbone)
+    save_checkpoint(best_path, model, CASCADE_CLASSES, best_epoch, early_stopping.best,
+                     backbone=cfg.backbone, img_size=cfg.img_size)
     print(f"[cascade] Training finished. Best val macro-F1 = {early_stopping.best:.4f}")
     print(f"[cascade] Best weights saved to {best_path}")
     print(f"[cascade] Next: python cascade_infer.py --data_root <...> "

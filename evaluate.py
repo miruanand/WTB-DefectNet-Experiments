@@ -167,14 +167,6 @@ def main():
     set_seed(cfg.seed)
     device = get_device()
 
-    print(f"[evaluate] Rebuilding the same 60:20:20 split (seed={cfg.seed}) "
-          f"used during training -- only the test_loader below will be used.")
-    _, _, test_loader, train_counts = build_loaders(
-        data_root=cfg.data_root, img_size=cfg.img_size, batch_size=cfg.batch_size,
-        val_fraction=cfg.val_fraction, test_fraction=cfg.test_fraction,
-        num_workers=cfg.num_workers, pin_memory=cfg.pin_memory, seed=cfg.seed,
-    )
-
     print(f"[evaluate] Loading checkpoint: {args.checkpoint}")
     ckpt = load_checkpoint(args.checkpoint, map_location=device)
     classes = ckpt.get("classes", CLASS_NAMES)
@@ -185,6 +177,30 @@ def main():
     # and default to "dsps" -- exactly what they were trained with.
     cfg.backbone = ckpt.get("backbone") or "dsps"
     print(f"[evaluate] backbone = {cfg.backbone}")
+
+    # Checkpoints saved before the img_size fix (utils.save_checkpoint) don't
+    # carry this field -- fall back to Config's default (384) with a loud
+    # warning rather than silently assuming it's correct. A wrong img_size
+    # here doesn't crash anything (the model still runs), it just quietly
+    # evaluates at the wrong resolution and gives you an untrustworthy number.
+    ckpt_img_size = ckpt.get("img_size")
+    if ckpt_img_size is not None:
+        cfg.img_size = ckpt_img_size
+        print(f"[evaluate] img_size = {cfg.img_size} (auto-detected from checkpoint)")
+    else:
+        print(f"[evaluate] WARNING: this checkpoint has no stored img_size "
+              f"(saved before this field was added). Falling back to "
+              f"Config default img_size={cfg.img_size} -- double-check this "
+              f"matches what the checkpoint was actually trained with, or "
+              f"pass a corrected value via Config in code.")
+
+    print(f"[evaluate] Rebuilding the same 60:20:20 split (seed={cfg.seed}) "
+          f"used during training -- only the test_loader below will be used.")
+    _, _, test_loader, train_counts = build_loaders(
+        data_root=cfg.data_root, img_size=cfg.img_size, batch_size=cfg.batch_size,
+        val_fraction=cfg.val_fraction, test_fraction=cfg.test_fraction,
+        num_workers=cfg.num_workers, pin_memory=cfg.pin_memory, seed=cfg.seed,
+    )
     model = build_model(cfg, NUM_CLASSES).to(device)
     if cfg.channels_last:
         model = model.to(memory_format=torch.channels_last)

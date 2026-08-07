@@ -190,6 +190,7 @@ def save_checkpoint(
     early_stopping: Optional[EarlyStopping] = None,
     backbone: Optional[str] = None,
     ema_state_dict: Optional[Dict] = None,
+    img_size: Optional[int] = None,
 ) -> None:
     """
     Saves a FULL resume-capable checkpoint. `epoch` should be the index of
@@ -207,6 +208,13 @@ def save_checkpoint(
     (saved before this was added) simply won't have this key -- everything
     that reads it uses .get(...) with a fallback, so old checkpoints still
     load fine.
+
+    `img_size`, if given, stores the resolution this checkpoint was TRAINED
+    at, so evaluate.py / cascade_infer.py / ensemble_infer.py can rebuild
+    the correct test-time transform automatically instead of assuming the
+    Config default (384). Older checkpoints won't have this key -- every
+    reader falls back to the CLI/config default with a printed warning, so
+    nothing breaks, it just stops silently trusting an unverified guess.
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     state = {
@@ -215,6 +223,7 @@ def save_checkpoint(
         "epoch": epoch,
         "best_f1": best_f1,
         "backbone": backbone,
+        "img_size": img_size,
     }
     if ema_state_dict is not None:
         state["ema_state_dict"] = ema_state_dict

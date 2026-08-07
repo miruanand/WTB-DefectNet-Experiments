@@ -1,0 +1,51 @@
+{
+  "main_checkpoint": "runs\\Try_9\\checkpoints\\best.pt",
+  "cascade_checkpoint": "runs\\Try_9_cascade\\checkpoints\\best.pt",
+  "cascade_weight": 0.5,
+  "main_tta": true,
+  "cascade_tta": true,
+  "n_test_images": 1509,
+  "n_routed_through_cascade": 404,
+  "n_corrections": 22,
+  "n_regressions": 7,
+  "metrics_before_cascade": {
+    "accuracy": 0.7760106030483764,
+    "macro_precision": 0.7162308601522279,
+    "macro_recall": 0.7550255953293625,
+    "macro_f1": 0.728764321921902,
+    "balanced_acc": 0.7550255953293625,
+    "kappa": 0.7237751519923921,
+    "mcc": 0.7252980402680737,
+    "per_class_f1": [
+      1.0,
+      0.5732484076433121,
+      0.5564738292011019,
+      0.8769230769230769,
+      0.45217391304347826,
+      0.9070631970260223,
+      0.6911447084233261,
+      0.754863813229572,
+      0.7469879518072289
+    ]
+  },
+  "metrics_after_cascade": {
+    "accuracy": 0.7859509609012592,
+    "macro_precision": 0.7254691018060444,
+    "macro_recall": 0.7629460919328158,
+    "macro_f1": 0.735309123453193,
+    "balanced_acc": 0.7629460919328158,
+    "kappa": 0.735881457237145,
+    "mcc": 0.7381039972328696,
+    "per_class_f1": [
+      1.0,
+      0.5660377358490566,
+      0.5764705882352941,
+      0.8769230769230769,
+      0.46153846153846156,
+      0.9111111111111111,
+      0.7238493723849372,
+      0.754863813229572,
+      0.7469879518072289
+    ]
+  }
+}

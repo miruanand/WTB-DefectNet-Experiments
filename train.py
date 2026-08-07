@@ -434,7 +434,7 @@ def main():
             last_path, model, CLASS_NAMES, epoch, early_stopping.best,
             optimizer=optimizer, scheduler=scheduler, scaler=scaler,
             early_stopping=early_stopping, backbone=cfg.backbone,
-            ema_state_dict=ema_state,
+            ema_state_dict=ema_state, img_size=cfg.img_size,
         )
         if is_best:
             best_epoch = epoch   # BUGFIX: remember which epoch this actually was
@@ -442,7 +442,7 @@ def main():
                 best_path, model, CLASS_NAMES, epoch, early_stopping.best,
                 optimizer=optimizer, scheduler=scheduler, scaler=scaler,
                 early_stopping=early_stopping, backbone=cfg.backbone,
-                ema_state_dict=ema_state,
+                ema_state_dict=ema_state, img_size=cfg.img_size,
             )
             print(f"           -> new best (val_macro_f1={early_stopping.best:.4f}), saved best.pt")
 
@@ -455,7 +455,7 @@ def main():
             ema_best = val_metrics_ema["macro_f1"]
             save_checkpoint(
                 best_ema_path, ema.module, CLASS_NAMES, epoch, ema_best,
-                backbone=cfg.backbone,
+                backbone=cfg.backbone, img_size=cfg.img_size,
             )
             print(f"           -> new best EMA (val_macro_f1={ema_best:.4f}), saved best_ema.pt")
 
@@ -481,6 +481,7 @@ def main():
         optimizer=optimizer, scheduler=scheduler, scaler=scaler,
         early_stopping=early_stopping, backbone=cfg.backbone,
         ema_state_dict=(ema.state_dict() if ema is not None else None),
+        img_size=cfg.img_size,
     )
     print(f"[train] Training finished. Best val macro-F1 = {early_stopping.best:.4f}")
     print(f"[train] Best weights saved to {best_path}")
