@@ -57,6 +57,13 @@ def parse_args() -> Config:
     ap.add_argument("--epochs", type=int, default=None)
     ap.add_argument("--batch_size", type=int, default=None)
     ap.add_argument("--num_workers", type=int, default=None)
+    ap.add_argument("--img_size", type=int, default=None,
+                     help="Override Config.img_size (default 384). Higher values "
+                          "(e.g. 448) preserve more detail for small defects "
+                          "(pinholes, hairline paint cracks) at the cost of more "
+                          "VRAM/epoch time. Must match at evaluate.py/cascade_infer.py "
+                          "time -- but those already auto-detect it from the saved "
+                          "checkpoint, so no extra flag is needed there.")
     ap.add_argument("--base_lr", type=float, default=None,
                      help="Override Config.base_lr. Mainly for phase-2 fine-tuning: "
                           "use a lower LR (e.g. 3e-5) than the phase-1 default (3e-4) "
@@ -113,7 +120,7 @@ def parse_args() -> Config:
 
     cfg = Config()
     for field in ("data_root", "out_dir", "epochs", "batch_size", "num_workers",
-                  "backbone", "base_lr"):
+                  "backbone", "base_lr", "img_size"):
         val = getattr(args, field)
         if val is not None:
             setattr(cfg, field, val)
