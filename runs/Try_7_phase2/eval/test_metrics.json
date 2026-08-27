@@ -1,0 +1,48 @@
+{
+  "checkpoint": "runs\\Try_7_phase2\\checkpoints\\best.pt",
+  "checkpoint_epoch": 37,
+  "n_test_images": 1509,
+  "class_names": [
+    "oil leakage",
+    "paint cracks",
+    "localized damage",
+    "lightning strikes",
+    "surface stains",
+    "erosion",
+    "coating detachment",
+    "protective film damage",
+    "pinholes"
+  ],
+  "used_ema_weights": false,
+  "tta": true,
+  "accuracy": 0.7601060304837641,
+  "macro_precision": 0.7047192076515986,
+  "macro_recall": 0.7477061322888396,
+  "macro_f1": 0.719282474413946,
+  "balanced_acc": 0.7477061322888396,
+  "kappa": 0.704172607949016,
+  "mcc": 0.7058513286747543,
+  "per_class_f1": [
+    0.985781990521327,
+    0.5955056179775281,
+    0.5058823529411764,
+    0.9,
+    0.46616541353383456,
+    0.8921658986175115,
+    0.6872246696035242,
+    0.7142857142857143,
+    0.726530612244898
+  ],
+  "roc_auc": {
+    "oil leakage": 1.0,
+    "paint cracks": 0.9122962494065517,
+    "localized damage": 0.8755237168936106,
+    "lightning strikes": 0.9979338842975206,
+    "surface stains": 0.9383293593199253,
+    "erosion": 0.9734118621104922,
+    "coating detachment": 0.9300873150618484,
+    "protective film damage": 0.9560140359997401,
+    "pinholes": 0.9498019241652519,
+    "micro_average": 0.9603069126658208
+  }
+}
