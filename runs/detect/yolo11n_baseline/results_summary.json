@@ -1,0 +1,24 @@
+{
+  "run_name": "yolo11n_baseline",
+  "model": "yolo11n_baseline (stock)",
+  "data": "D:\\23BLC1224_Mirunalini_FYP1_Karthik_Sir\\WTBs2025_yolo\\data.yaml",
+  "epochs": 300,
+  "batch": 16,
+  "imgsz": 640,
+  "params": 2583907,
+  "test_mAP50": 0.3349309067253678,
+  "test_mAP50_95": 0.21880821347741883,
+  "test_precision": 0.40378629276403544,
+  "test_recall": 0.34216673969873074,
+  "per_class_mAP50": {
+    "oil leakage": 0.9842727272727273,
+    "paint cracks": 0.20574300749928787,
+    "localized damage": 0.15223383118377837,
+    "lightning strikes": 0.9672966880789461,
+    "surface stains": 0.0071310916976266535,
+    "erosion": 0.31026505228971557,
+    "coating detachment": 0.07155176446712733,
+    "protective film damage": 0.3153863677073469,
+    "pinholes": 0.0004976303317535545
+  }
+}

@@ -1,0 +1,48 @@
+# YOLOv11 detection head/neck (unchanged, standard Ultralytics PAN) driven
+# by the WTB-DefectNet backbone (DSPS stem + Stage1-4: TSDB/ASA/DRFB/WGFR/MSCA)
+# instead of YOLO11's default CSPDarknet-style backbone.
+#
+# Channel alignment is exact and required no adapter convs:
+#   Stage2 out = 128ch @ stride 8  -> P3 (small objects   -- e.g. minute cracks)
+#   Stage3 out = 256ch @ stride 16 -> P4 (medium objects)
+#   Stage4 out = 512ch @ stride 32 -> P5 (large objects   -- e.g. erosion/dirt patches)
+#
+# nc = 9 to match WTBs2025's data.yaml (oil leakage, paint cracks,
+# localized damage, lightning strikes, surface stains, erosion,
+# coating detachment, protective film damage, pinholes).
+
+nc: 9
+
+scales:
+  # [depth, width, max_channels] -- kept at 1.0 since our backbone's widths
+  # are already fixed (64/128/256/512) by WTB-DefectNet's own design; we
+  # don't want Ultralytics' auto-scaling to silently resize our blocks.
+  n: [1.00, 1.00, 1024]
+
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, WTBStem,   [64]]    # 0  P1/4   (DSPS)
+  - [-1, 1, WTBStage1, [64]]    # 1  P1/4   (TSDB+ASA, no downsample)
+  - [-1, 1, WTBStage2, [128]]   # 2  P3/8   (TSDB+ASA+DRFB)
+  - [-1, 1, WTBStage3, [256]]   # 3  P4/16  (TSDB+ASA+WGFR)
+  - [-1, 1, WTBStage4, [512]]   # 4  P5/32  (TSDB+ASA+MSCA)
+  - [-1, 1, SPPF, [512, 5]]     # 5  P5/32  (standard receptive-field pool, cheap, well-tested)
+
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]     # 6
+  - [[-1, 3], 1, Concat, [1]]                        # 7  cat backbone P4 (layer 3)
+  - [-1, 2, C3k2, [256, False]]                      # 8
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]       # 9
+  - [[-1, 2], 1, Concat, [1]]                        # 10 cat backbone P3 (layer 2)
+  - [-1, 2, C3k2, [128, False]]                      # 11 (P3/8-small)  <- Detect input
+
+  - [-1, 1, Conv, [128, 3, 2]]                       # 12
+  - [[-1, 8], 1, Concat, [1]]                        # 13 cat head P4 (layer 8)
+  - [-1, 2, C3k2, [256, False]]                      # 14 (P4/16-medium) <- Detect input
+
+  - [-1, 1, Conv, [256, 3, 2]]                       # 15
+  - [[-1, 5], 1, Concat, [1]]                        # 16 cat backbone P5 (layer 5, SPPF out)
+  - [-1, 2, C3k2, [512, True]]                       # 17 (P5/32-large)  <- Detect input
+
+  - [[11, 14, 17], 1, Detect, [nc]]                  # 18 Detect(P3, P4, P5)

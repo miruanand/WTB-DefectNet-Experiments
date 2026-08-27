@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-set DATA_ROOT=D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025
+set DATA_ROOT=C:\Users\Student\Desktop\23BLC1224_FYP-1_Karthik_Sir\WTBs2025
 
 REM ============================================================
 REM PHASE 1: Try_7 -- resnet18 hybrid, frozen stem, mixup/cutmix + EMA on

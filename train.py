@@ -57,6 +57,13 @@ def parse_args() -> Config:
     ap.add_argument("--epochs", type=int, default=None)
     ap.add_argument("--batch_size", type=int, default=None)
     ap.add_argument("--num_workers", type=int, default=None)
+    ap.add_argument("--img_size", type=int, default=None,
+                     help="Override Config.img_size (default 384). Higher values "
+                          "(e.g. 448) preserve more detail for small defects "
+                          "(pinholes, hairline paint cracks) at the cost of more "
+                          "VRAM/epoch time. Must match at evaluate.py/cascade_infer.py "
+                          "time -- but those already auto-detect it from the saved "
+                          "checkpoint, so no extra flag is needed there.")
     ap.add_argument("--base_lr", type=float, default=None,
                      help="Override Config.base_lr. Mainly for phase-2 fine-tuning: "
                           "use a lower LR (e.g. 3e-5) than the phase-1 default (3e-4) "
@@ -113,7 +120,7 @@ def parse_args() -> Config:
 
     cfg = Config()
     for field in ("data_root", "out_dir", "epochs", "batch_size", "num_workers",
-                  "backbone", "base_lr"):
+                  "backbone", "base_lr", "img_size"):
         val = getattr(args, field)
         if val is not None:
             setattr(cfg, field, val)
@@ -434,7 +441,7 @@ def main():
             last_path, model, CLASS_NAMES, epoch, early_stopping.best,
             optimizer=optimizer, scheduler=scheduler, scaler=scaler,
             early_stopping=early_stopping, backbone=cfg.backbone,
-            ema_state_dict=ema_state,
+            ema_state_dict=ema_state, img_size=cfg.img_size,
         )
         if is_best:
             best_epoch = epoch   # BUGFIX: remember which epoch this actually was
@@ -442,7 +449,7 @@ def main():
                 best_path, model, CLASS_NAMES, epoch, early_stopping.best,
                 optimizer=optimizer, scheduler=scheduler, scaler=scaler,
                 early_stopping=early_stopping, backbone=cfg.backbone,
-                ema_state_dict=ema_state,
+                ema_state_dict=ema_state, img_size=cfg.img_size,
             )
             print(f"           -> new best (val_macro_f1={early_stopping.best:.4f}), saved best.pt")
 
@@ -455,7 +462,7 @@ def main():
             ema_best = val_metrics_ema["macro_f1"]
             save_checkpoint(
                 best_ema_path, ema.module, CLASS_NAMES, epoch, ema_best,
-                backbone=cfg.backbone,
+                backbone=cfg.backbone, img_size=cfg.img_size,
             )
             print(f"           -> new best EMA (val_macro_f1={ema_best:.4f}), saved best_ema.pt")
 
@@ -481,6 +488,7 @@ def main():
         optimizer=optimizer, scheduler=scheduler, scaler=scaler,
         early_stopping=early_stopping, backbone=cfg.backbone,
         ema_state_dict=(ema.state_dict() if ema is not None else None),
+        img_size=cfg.img_size,
     )
     print(f"[train] Training finished. Best val macro-F1 = {early_stopping.best:.4f}")
     print(f"[train] Best weights saved to {best_path}")
