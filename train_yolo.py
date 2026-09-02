@@ -41,6 +41,20 @@ def main():
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--device", default=0, help="GPU index, or 'cpu'")
     ap.add_argument(
+        "--workers",
+        type=int,
+        default=8,
+        help="Dataloader worker processes. Defaults to Ultralytics' standard 8. "
+             "If training seems to hang right after 'Starting training for N epochs...' "
+             "with no progress and no GPU/CPU activity in Task Manager for several "
+             "minutes, this is usually either (a) first-run kernel compilation on "
+             "Intel XPU, which is genuinely slow and just needs more time, or (b) a "
+             "Windows multiprocessing deadlock with multiple worker processes. Try "
+             "--workers 0 (single-process, slower per-batch but far more reliable on "
+             "Windows) to tell which one you're hitting: if it starts immediately with "
+             "--workers 0, it was (b); if it still takes a while, it's (a) and is normal.",
+    )
+    ap.add_argument(
         "--baseline",
         action="store_true",
         help="Train stock yolo11n.yaml instead of the WTB-DefectNet backbone "
@@ -56,6 +70,19 @@ def main():
         action="store_true",
         help="Resume an interrupted run from its last checkpoint instead of starting over. "
              "Uses the same --name as the run you're resuming.",
+    )
+    ap.add_argument(
+        "--mosaic",
+        type=float,
+        default=0.0,
+        help="Mosaic augmentation probability (0.0-1.0). Defaults to OFF (0.0) here -- "
+             "testing on WTBs2025 showed several defect classes have boxes as small as "
+             "2-3 pixels (pinholes, coating detachment, erosion, localized damage, paint "
+             "cracks, surface stains), and mosaic's aggressive crop/resize can shrink or "
+             "cut these out entirely during training, which was a likely contributor to "
+             "those classes scoring near zero mAP even though the data itself was verified "
+             "correctly labeled. Pass --mosaic 1.0 to restore Ultralytics' default if you "
+             "want to A/B test this specific change.",
     )
     args = ap.parse_args()
 
@@ -95,6 +122,8 @@ def main():
             optimizer="auto",
             patience=50,
             plots=True,
+            mosaic=args.mosaic,
+            workers=args.workers,
         )
 
         # Also run the held-out test split (not just val) so you get the
