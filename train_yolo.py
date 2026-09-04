@@ -38,7 +38,20 @@ def main():
     ap.add_argument("--data", required=True, help="path to WTBs2025 data.yaml (train/val/test layout)")
     ap.add_argument("--epochs", type=int, default=300)
     ap.add_argument("--batch", type=int, default=16)
-    ap.add_argument("--imgsz", type=int, default=640)
+    ap.add_argument(
+        "--imgsz",
+        type=int,
+        default=1024,
+        help="Training resolution. Defaults to 1024 (up from 640) -- WTBs2025's shipped "
+             "images are already pre-resized to 640x640 by the dataset's own publishers, "
+             "so raising imgsz here does NOT recover real lost detail (Ultralytics just "
+             "upsamples the 640x640 source via interpolation). It still helps to a real "
+             "but more limited degree than true higher-resolution source images would: "
+             "at 1024 input with the P2 head's stride-4 output, a defect that was ~2px "
+             "wide at 640 becomes ~3.2px in the (upsampled) 1024 image, giving the stride-4 "
+             "grid more room to localize it. Try 1280 if your GPU has the memory for it "
+             "(lower --batch if you hit an out-of-memory error at higher imgsz).",
+    )
     ap.add_argument("--device", default=0, help="GPU index, or 'cpu'")
     ap.add_argument(
         "--workers",
@@ -84,6 +97,30 @@ def main():
              "correctly labeled. Pass --mosaic 1.0 to restore Ultralytics' default if you "
              "want to A/B test this specific change.",
     )
+    ap.add_argument(
+        "--scale",
+        type=float,
+        default=0.2,
+        help="Random scale-jitter augmentation range (Ultralytics default is 0.5, i.e. "
+             "each image can be randomly scaled +/-50%% during training). Defaulted down "
+             "to 0.2 here: your smallest real defects (pinholes, hairline cracks) are "
+             "already only 1-3 pixels wide, so an aggressive scale-down during "
+             "augmentation can shrink them to sub-pixel size and destroy the training "
+             "signal entirely. Pass --scale 0.5 to restore Ultralytics' default if you "
+             "want to A/B test this specific change.",
+    )
+    ap.add_argument(
+        "--arch",
+        choices=["p2", "no_p2"],
+        default="p2",
+        help="Which WTB-DefectNet backbone yaml to use (ignored when --baseline is set). "
+             "'p2' (default) = yolo11-wtbdefectnet.yaml, the 4-scale P2/P3/P4/P5 version. "
+             "'no_p2' = yolo11-wtbdefectnet-noP2.yaml, the original 3-scale P3/P4/P5 "
+             "version, kept around specifically so you can run a controlled P2-vs-no-P2 "
+             "ablation with every other setting held identical -- run once with each and "
+             "compare the per-class mAP for the tiny-object classes (pinholes, coating "
+             "detachment, etc.) to see how much the P2 head is actually contributing.",
+    )
     args = ap.parse_args()
 
     from ultralytics import YOLO
@@ -109,8 +146,9 @@ def main():
             run_name = args.name or "yolo11n_baseline"
         else:
             register_wtb_modules()  # must run BEFORE YOLO(cfg) parses the custom yaml
-            model = YOLO("yolo11-wtbdefectnet.yaml")
-            run_name = args.name or "wtbdefectnet_yolo"
+            arch_yaml = "yolo11-wtbdefectnet.yaml" if args.arch == "p2" else "yolo11-wtbdefectnet-noP2.yaml"
+            model = YOLO(arch_yaml)
+            run_name = args.name or ("wtbdefectnet_yolo" if args.arch == "p2" else "wtbdefectnet_yolo_noP2")
 
         model.train(
             data=args.data,
@@ -123,6 +161,7 @@ def main():
             patience=50,
             plots=True,
             mosaic=args.mosaic,
+            scale=args.scale,
             workers=args.workers,
         )
 

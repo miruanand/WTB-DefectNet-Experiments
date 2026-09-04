@@ -1,0 +1,24 @@
+{
+  "run_name": "wtbdefectnet_yolo",
+  "model": "yolo11 + WTB-DefectNet backbone",
+  "data": "D:\\23BLC1224_Mirunalini_FYP1_Karthik_Sir\\WTBs2025_yolo\\data.yaml",
+  "epochs": 120,
+  "batch": 8,
+  "imgsz": 1024,
+  "params": 12891006,
+  "test_mAP50": 0.3173280923157103,
+  "test_mAP50_95": 0.22478891641523602,
+  "test_precision": 0.41366491882367573,
+  "test_recall": 0.35559834904974646,
+  "per_class_mAP50": {
+    "oil leakage": 0.985,
+    "paint cracks": 0.13634592116385186,
+    "localized damage": 0.1870592690119019,
+    "lightning strikes": 0.8950843613933237,
+    "surface stains": 0.006147469458987784,
+    "erosion": 0.24682420540035516,
+    "coating detachment": 0.06139860332865999,
+    "protective film damage": 0.29040016186901296,
+    "pinholes": 0.047692839215299127
+  }
+}

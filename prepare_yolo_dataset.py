@@ -22,9 +22,17 @@ every split gets a proportional share of each of the 9 defect types --
 important given how skewed the classes are (erosion: 2799 images vs.
 lightning strikes: 57).
 
+NEW: --oversample_max_ratio (default 4.0) duplicates minority-class
+TRAIN images (never val/test -- duplicating into your evaluation sets
+would inflate your reported accuracy dishonestly) to reduce class
+imbalance, capped at a max multiplier per class so tiny classes don't
+get duplicated to the point of just memorizing the same handful of
+images repeatedly. Set --oversample_max_ratio 1.0 to disable (no
+duplication, original behavior).
+
 Usage
 -----
-    python prepare_yolo_dataset.py --src "C:\\Users\\Student\\Desktop\\23BLC1224_FYP-1_Karthik_Sir\\WTBs2025" --dst "C:\\Users\\Student\\Desktop\\23BLC1224_FYP-1_Karthik_Sir\\WTBs2025_yolo"
+    python prepare_yolo_dataset.py --src "C:\\path\\to\\WTBs2025" --dst "C:\\path\\to\\WTBs2025_yolo"
 
 By default files are COPIED (safe, doesn't touch your original
 extracted WTBs2025 folder). Pass --move if you want to save disk space
@@ -59,6 +67,19 @@ def main():
     # test = 1 - train - val
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--move", action="store_true", help="move instead of copy (saves disk space)")
+    ap.add_argument(
+        "--oversample_max_ratio",
+        type=float,
+        default=4.0,
+        help="Cap on how many times a minority class's TRAIN images get duplicated "
+             "to reduce class imbalance. E.g. with the default 4.0, a class whose "
+             "'natural' target (to match the largest class) would need 10x "
+             "duplication instead gets capped at 4x -- enough to meaningfully "
+             "increase its training exposure without just re-showing the model "
+             "the same handful of images over and over. Set to 1.0 to disable "
+             "oversampling entirely (original, un-duplicated behavior). Never "
+             "applied to val/test -- only train images are duplicated.",
+    )
     args = ap.parse_args()
 
     src = Path(args.src)
@@ -70,8 +91,9 @@ def main():
         (dst / split / "labels").mkdir(parents=True, exist_ok=True)
 
     file_op = shutil.move if args.move else shutil.copy2
-    totals = {"train": 0, "val": 0, "test": 0}
 
+    # ---- Phase 1: collect per-class splits (no writing yet) ----
+    per_class_splits = {}  # class_name -> {"train": [...], "val": [...], "test": [...]}
     for class_folder in sorted(src.iterdir()):
         if not class_folder.is_dir():
             continue
@@ -93,26 +115,47 @@ def main():
         n = len(pairs)
         n_train = int(n * args.train)
         n_val = int(n * args.val)
-        splits = {
+        per_class_splits[class_folder.name] = {
             "train": pairs[:n_train],
             "val": pairs[n_train:n_train + n_val],
             "test": pairs[n_train + n_val:],
         }
 
-        print(f"{class_folder.name:30s} total={n:5d}  train={len(splits['train']):5d}  "
-              f"val={len(splits['val']):5d}  test={len(splits['test']):5d}")
+    # ---- Phase 2: compute oversampling multiplier per class (train only) ----
+    max_train_count = max(len(s["train"]) for s in per_class_splits.values())
+    multipliers = {}
+    for class_name, s in per_class_splits.items():
+        n_train = len(s["train"])
+        if n_train == 0:
+            multipliers[class_name] = 1
+            continue
+        natural_ratio = max_train_count / n_train
+        capped_ratio = min(natural_ratio, args.oversample_max_ratio)
+        multipliers[class_name] = max(1, round(capped_ratio))
 
-        for split, split_pairs in splits.items():
-            for img_path, lbl_path in split_pairs:
-                # Prefix filenames with the class folder name to avoid any
-                # cross-class filename collisions once everything lands in
-                # one flat train/images folder.
-                safe_prefix = class_folder.name.replace(" ", "_")
-                new_img_name = f"{safe_prefix}__{img_path.name}"
-                new_lbl_name = f"{safe_prefix}__{lbl_path.name}"
-                file_op(img_path, dst / split / "images" / new_img_name)
-                file_op(lbl_path, dst / split / "labels" / new_lbl_name)
-                totals[split] += 1
+    # ---- Phase 3: write everything out ----
+    totals = {"train": 0, "val": 0, "test": 0}
+    for class_name, s in per_class_splits.items():
+        safe_prefix = class_name.replace(" ", "_")
+        mult = multipliers[class_name]
+
+        print(f"{class_name:30s} total={sum(len(v) for v in s.values()):5d}  "
+              f"train={len(s['train']):5d} (x{mult} oversample)  "
+              f"val={len(s['val']):5d}  test={len(s['test']):5d}")
+
+        for split, pairs in s.items():
+            n_copies = mult if split == "train" else 1  # NEVER oversample val/test
+            for img_path, lbl_path in pairs:
+                for copy_idx in range(n_copies):
+                    suffix = f"__dup{copy_idx}" if copy_idx > 0 else ""
+                    new_img_name = f"{safe_prefix}__{img_path.stem}{suffix}{img_path.suffix}"
+                    new_lbl_name = f"{safe_prefix}__{lbl_path.stem}{suffix}{lbl_path.suffix}"
+                    # copy2 (not move) for any duplicate beyond the first, even
+                    # in --move mode, since a "moved" file can't be moved twice.
+                    op = file_op if copy_idx == 0 else shutil.copy2
+                    op(img_path, dst / split / "images" / new_img_name)
+                    op(lbl_path, dst / split / "labels" / new_lbl_name)
+                    totals[split] += 1
 
     yaml_lines = [
         f"path: {dst.as_posix()}",
@@ -125,6 +168,10 @@ def main():
 
     print(f"\nDone. train={totals['train']}  val={totals['val']}  test={totals['test']}")
     print(f"data.yaml written to: {dst / 'data.yaml'}")
+    if args.oversample_max_ratio > 1.0:
+        print(f"\nNote: train counts above include oversampling duplicates (capped at "
+              f"{args.oversample_max_ratio}x per class). val/test are never duplicated, "
+              f"so your reported test-set accuracy stays honest.")
     print("\nIMPORTANT: the 9 class-name -> id mapping above must match the "
           "original data.yaml shipped inside WTBs2025.zip. It was verified "
           "to be: 0 oil leakage, 1 paint cracks, 2 localized damage, "

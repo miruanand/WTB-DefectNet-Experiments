@@ -1,11 +1,14 @@
 """
 generate_comparison.py
 ========================
-Reads runs/detect/wtbdefectnet_yolo/results_summary.json and
-runs/detect/yolo11n_baseline/results_summary.json (written automatically
+Reads results_summary.json from all three runs (written automatically
 by train_yolo.py at the end of each run) and writes a COMPARISON.md at
 the repo root -- this is the file worth committing to git alongside your
 code, since raw .pt checkpoint files are large and not diffable.
+
+    runs/detect/wtbdefectnet_yolo/results_summary.json        (--arch p2, default)
+    runs/detect/wtbdefectnet_yolo_noP2/results_summary.json   (--arch no_p2)
+    runs/detect/yolo11n_baseline/results_summary.json         (--baseline)
 
 Usage
 -----
@@ -15,7 +18,11 @@ Usage
 import json
 from pathlib import Path
 
-RUN_NAMES = ["wtbdefectnet_yolo", "yolo11n_baseline"]
+RUNS = [
+    ("wtbdefectnet_yolo", "WTB-DefectNet (P2)"),
+    ("wtbdefectnet_yolo_noP2", "WTB-DefectNet (no P2)"),
+    ("yolo11n_baseline", "Stock YOLOv11n"),
+]
 
 
 def load_results(run_name: str):
@@ -27,23 +34,25 @@ def load_results(run_name: str):
 
 
 def main():
-    results = {name: load_results(name) for name in RUN_NAMES}
-    missing = [name for name, r in results.items() if r is None]
+    results = {run_name: load_results(run_name) for run_name, _ in RUNS}
+    missing = [run_name for run_name, r in results.items() if r is None]
     if missing:
         print(f"WARNING: no results_summary.json found for: {missing}")
         print("(train_yolo.py writes this automatically at the end of a run -- "
-              "make sure both training commands finished before running this.)")
+              "make sure all training commands finished before running this.)")
 
-    lines = ["# WTB-DefectNet + YOLO vs. Stock YOLOv11n -- Results\n"]
-    lines.append(f"_Generated automatically by generate_comparison.py_\n")
+    lines = ["# WTB-DefectNet: P2 vs No-P2 vs Stock YOLOv11n -- Results\n"]
+    lines.append("_Generated automatically by generate_comparison.py_\n")
 
-    lines.append("| Metric | WTB-DefectNet backbone | Stock YOLOv11n |")
-    lines.append("|---|---|---|")
+    header = "| Metric | " + " | ".join(label for _, label in RUNS) + " |"
+    sep = "|---|" + "---|" * len(RUNS)
+    lines.append(header)
+    lines.append(sep)
 
     def fmt(key, pct=True):
         vals = []
-        for name in RUN_NAMES:
-            r = results[name]
+        for run_name, _ in RUNS:
+            r = results[run_name]
             if r is None:
                 vals.append("N/A")
             else:
@@ -58,23 +67,31 @@ def main():
         ("Recall", "test_recall", True),
         ("Params", "params", False),
         ("Epochs", "epochs", False),
+        ("Image size", "imgsz", False),
     ]:
-        v1, v2 = fmt(key, pct)
-        lines.append(f"| {label} | {v1} | {v2} |")
+        vals = fmt(key, pct)
+        lines.append(f"| {label} | " + " | ".join(vals) + " |")
 
-    # Per-class breakdown, if available
-    r1 = results.get("wtbdefectnet_yolo")
-    r2 = results.get("yolo11n_baseline")
-    if r1 and r2 and r1.get("per_class_mAP50") and r2.get("per_class_mAP50"):
+    # Per-class breakdown, if all three have it
+    per_class_available = [
+        results[run_name].get("per_class_mAP50")
+        for run_name, _ in RUNS
+        if results[run_name] and results[run_name].get("per_class_mAP50")
+    ]
+    if len(per_class_available) == len(RUNS):
         lines.append("\n## Per-class mAP@0.5\n")
-        lines.append("| Class | WTB-DefectNet backbone | Stock YOLOv11n |")
-        lines.append("|---|---|---|")
-        for cls_name in r1["per_class_mAP50"]:
-            v1 = r1["per_class_mAP50"].get(cls_name)
-            v2 = r2["per_class_mAP50"].get(cls_name)
-            v1s = f"{v1*100:.2f}%" if v1 is not None else "N/A"
-            v2s = f"{v2*100:.2f}%" if v2 is not None else "N/A"
-            lines.append(f"| {cls_name} | {v1s} | {v2s} |")
+        header = "| Class | " + " | ".join(label for _, label in RUNS) + " |"
+        sep = "|---|" + "---|" * len(RUNS)
+        lines.append(header)
+        lines.append(sep)
+        # use the class list from the first run as the canonical ordering
+        first_run_classes = list(results[RUNS[0][0]]["per_class_mAP50"].keys())
+        for cls_name in first_run_classes:
+            row_vals = []
+            for run_name, _ in RUNS:
+                v = results[run_name]["per_class_mAP50"].get(cls_name)
+                row_vals.append(f"{v*100:.2f}%" if v is not None else "N/A")
+            lines.append(f"| {cls_name} | " + " | ".join(row_vals) + " |")
 
     out_path = Path("COMPARISON.md")
     out_path.write_text("\n".join(lines) + "\n")
