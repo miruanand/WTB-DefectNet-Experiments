@@ -1,7 +1,7 @@
 task: detect
 mode: train
-model: yolo11-wtbdefectnet.yaml
-data: D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\WTBs2025_yolo\data.yaml
+model: runs\detect\wtbdefectnet_yolo\weights\last.pt
+data: C:\Users\Student\Desktop\23BLC1224_FYP-1_Karthik_Sir\WTBs2025_yolo\data.yaml
 epochs: 300
 time: null
 patience: 50
@@ -25,7 +25,7 @@ single_cls: false
 rect: false
 cos_lr: false
 close_mosaic: 10
-resume: false
+resume: runs\detect\wtbdefectnet_yolo\weights\last.pt
 amp: true
 fraction: 1.0
 profile: false
@@ -78,7 +78,7 @@ momentum: 0.937
 weight_decay: 0.0005
 warmup_epochs: 3.0
 warmup_momentum: 0.8
-warmup_bias_lr: 0.1
+warmup_bias_lr: 0.0
 distill_model: null
 dis: 6.0
 box: 7.5
@@ -104,7 +104,7 @@ perspective: 0.0
 flipud: 0.0
 fliplr: 0.5
 bgr: 0.0
-mosaic: 0.0
+mosaic: 1.0
 mixup: 0.0
 cutmix: 0.0
 copy_paste: 0.0
@@ -113,4 +113,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: tracktrack.yaml
-save_dir: D:\23BLC1224_Mirunalini_FYP1_Karthik_Sir\wtb_defectnet\runs\detect\wtbdefectnet_yolo
+save_dir: C:\Users\Student\Desktop\23BLC1224_FYP-1_Karthik_Sir\WTB-DefectNet-Experiments-main\runs\detect\wtbdefectnet_yolo
